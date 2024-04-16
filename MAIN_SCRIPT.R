@@ -7,7 +7,7 @@
 ################################################################################
 
 repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
-repo_prgm <- paste(repgen, "/Microsimulation_TF" , sep = "/")
+repo_prgm <- paste(repgen, "MicrosimulationTF" , sep = "/")
 repo_sorties <- paste(repgen, "Sorties" , sep = "/")
 repo_data <- paste(repgen, "Data" , sep = "/")
 repo_bases_intermediaires <- paste(repgen, "Bases_intermediaires" , sep = "/")
