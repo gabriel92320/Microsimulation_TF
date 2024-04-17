@@ -106,9 +106,20 @@ liste_cols_REI <- c("DEPARTEMENT",
 
 # REI_21 <- fread(paste(repo_data, "REI_2021.xlsx", sep = "/"), select = liste_cols_REI, head = TRUE)
 # REI_21 <- fread(paste(repo_data, "REI_2021.xlsx", sep = "/"), head = TRUE)
+chemin_fichier <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution/Data/REI_2021.xlsx"
+# REI_21 <- read_excel(chemin_fichier, col_names = liste_cols_REI)
 
- 
 
+# REI_21 <- read.xlsx(chemin_fichier, cols = liste_cols_REI)
+REI_21 <- read.xlsx(chemin_fichier)
+rei <- data.table(REI_21)
+
+
+# REI_21 <- readxl::read_xlsx(chemin_fichier)
+# rei2 <- data.table(REI_21)
+
+nrow(rei2)
+length(colnames(rei2))
 ################################################################################
 ################### BROUILLON GABRIEL ########################################## 
 ################################################################################
