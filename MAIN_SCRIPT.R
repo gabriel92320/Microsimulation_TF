@@ -32,6 +32,43 @@ source(paste(repo_prgm , "01_packages.R" , sep = "/"))
 ################################################################################
 ################### BROUILLON BENJAMIN ######################################### 
 ################################################################################
+liste_cols_REI <- c("DEPARTEMENT",
+                    "DIRECTION",
+                    "COMMUNE",
+                    "Numéro.national.du.groupement",
+                    "NUMERO.SIREN.DE.L'EPCI",
+                    "Libellé.du.Groupement",
+                    "option.fiscale.de.l'EPCI.(FPA,.FPU.ou.FPZ)",
+                    "Forme.juridique.EPCI.(CA,.CU,.CC,.SAN.ou.Mét)",
+                    "Libellé.commune",
+                    "FB.-.FRAIS.D'ASSIETTE,.DEGREVEMENT,.NON.VALEURS",
+                    "FB.-.COMMUNE./.BASE.NETTE",
+                    "FB.-.COMMUNE./.TAUX.NET",
+                    "FB.-.COMMUNE./.MONTANT.REEL",
+                    "FB.-.COMMUNE./.NOMBRE.D'ARTICLES",
+                    "FB.-.COMMUNE./.MONTANT.LISSAGE",
+                    "FB.-.GFP./.BASE.NETTE",
+                    "FB.-.GFP./.TAUX.APPLICABLE.SUR.LE.TERRITOIRE.DE.LA.COMMUNE",
+                    "FB.-.GFP./.TAUX.VOTE",
+                    "FB.-.GFP./.MONTANT.REEL",
+                    "FB.-.GFP./.MONTANT.LISSAGE",
+                    "FB.-.TSE./.BASE.NETTE",
+                    "FB.-.TSE./.TAUX.NET")
+
+REI_21 <- data.table(read.xlsx(paste(repo_data, "REI_2021.xlsx", sep = "/")))
+SOUS_REI <- REI_21[, ..liste_cols_REI]
+save(SOUS_REI, file = paste(repo_bases_intermediaires, "REI_2021_SELECT.RData", sep = "/"))
+
+
+
+
+
+
+
+
+
+
+
 carac_men <- data.table(readRDS(paste(repo_data, "carac_men.rds", sep = "/")))
 carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
 
@@ -80,25 +117,35 @@ table(carac_tf[, .N, by = "ident21"]$N) # Certians identifiants apparaîssent pl
 dt_merged <- merge(carac_tf, carac_men, by.x = "ident21", by.y = "ident", all.x = TRUE)
 
 
-liste_cols_REI <- c("DEPARTEMENT",
-                    "DIRECTION",
-                    "COMMUNE",
-                    "Numéro national du groupement",
-                    "NUMERO SIREN DE L'EPCI",
-                    "Libellé du Groupement",
-                    "option fiscale de l'EPCI (FPA, FPU ou FPZ)",
-                    "Forme juridique EPCI (CA, CU, CC, SAN ou Mét)",
-                    "Libellé commune",
-                    "FB - COMMUNE / TAUX NET",
-                    "FB - GFP / TAUX APPLICABLE SUR LE TERRITOIRE DE LA COMMUNE",
-                    "FB - GFP / TAUX VOTE",
-                    "FB - TSE / TAUX NET")
+
+
+# liste_cols_REI <- c("DEP", # DEPARTEMENT
+#                     "DIR", # DIRECTION
+#                     "COM", # COMMUNE
+#                     "Q02", # Numero national du Groupement
+#                     "SIREPCI", # Numéro SIREN de l'EPCI
+#                     "Q03", # Libellé du Groupement
+#                     "OPTEPCI", # Option fiscale de l'EPCI (FPA, FPU ou FPZ)
+#                     "FORJEPCI", # Forme jurisique EPCI (CA, CU, CC, SAN ou Mét)
+#                     "LIBCOM", # Commune
+#                     "E00", # FB - FRAIS D'ASSIETTE, DEGREVEMENT,  NON VALEURS
+#                     "E11", # FB - COMMUNE / BASE NETTE
+#                     "E12", # FB - COMMUNE / TAUX NET = "Taux de TFB net voté par la commune.  Sur le territoire des communes nouvelles concernées par une intégration fiscale progressive (dispositif de convergence des taux suite à une fusion/restructuration), ce taux est recalculé et correspond donc au taux appliqué sur le territoire de la commune.
+#                     "E13", # FB - COMMUNE / MONTANT REEL
+#                     "E14", # FB - COMMUNE / NOMBRE D'ARTICLES
+#                     "E16", # FB - COMMUNE / MONTANT LISSAGE
+#                     "E31", # FB - GFP / BASE NETTE
+#                     "E32", # FB - GFP / TAUX APPLICABLE SUR LE TERRITOIRE DE LA COMMUNE = "Le taux intercommunal applicable sur le territoire de la commune doit être distingué du taux voté par l'EPCI à fiscalité propre (variable E32VOTE). Le taux applicable est recalculé sur le territoire de la commune. Ainsi, pour les EPCI à fiscalité propre concernés par une intégration fiscale progressive (dispositif de convergence des taux suite à une fusion/restructuration), ce taux applicable sera différent d'une commune membre à l'autre alors que le taux voté est unique.
+#                     "E32VOTE", # FB - GFP / TAUX VOTE =  "Taux voté par l'EPCI à fiscalité propre.  Il peut être différent du taux applicable sur le territoire de la commune (variable B32) dans les cas d'intégration fiscale progressif (dispositif de convergence des taux)."
+#                     "E33", # FB - GFP / MONTANT REEL
+#                     "E36", # FB - GFP / MONTANT LISSAGE
+#                     "E51", # FB - TSE / BASE NETTE
+#                     "E52", # FB - TSE / TAUX NET = "Taux de TSE adossée à la TFB :  A la manière d'un syndicat, l'EPF ne vote pas un taux mais un produit, dans la limite d'un plafond fixé à 20€ par habitant situé dans son périmètre. Le produit est réparti entre toutes les personnes physiques ou morales assujetties aux TF, à la TH et à la CFE dans les communes comprises dans la zone de compétence de l'établissement. Cela permet de déterminer les fractions supplémentaires de taux qui figureront de manière isolée dans les rôles d'imposition des contribuables.
+#                     "IDCOM")
                     
-# "E12", # "Taux de TFB voté par la commune.  Sur le territoire des communes nouvelles concernées par une intégration fiscale progressive (dispositif de convergence des taux suite à une fusion/restructuration), ce taux est recalculé et correspond donc au taux appliqué sur le territoire de la commune. 
-# "E32", # "Le taux intercommunal applicable sur le territoire de la commune doit être distingué du taux voté par l'EPCI à fiscalité propre (variable E32VOTE). Le taux applicable est recalculé sur le territoire de la commune. Ainsi, pour les EPCI à fiscalité propre concernés par une intégration fiscale progressive (dispositif de convergence des taux suite à une fusion/restructuration), ce taux applicable sera différent d'une commune membre à l'autre alors que le taux voté est unique.
-# "E32VOTE", # "Taux voté par l'EPCI à fiscalité propre.  Il peut être différent du taux applicable sur le territoire de la commune (variable B32) dans les cas d'intégration fiscale progressif (dispositif de convergence des taux)."
-# "E52", # "Taux de TSE adossée à la TFB :  A la manière d'un syndicat, l'EPF ne vote pas un taux mais un produit, dans la limite d'un plafond fixé à 20€ par habitant situé dans son périmètre. Le produit est réparti entre toutes les personnes physiques ou morales assujetties aux TF, à la TH et à la CFE dans les communes comprises dans la zone de compétence de l'établissement. Cela permet de déterminer les fractions supplémentaires de taux qui figureront de manière isolée dans les rôles d'imposition des contribuables. 
-# "IDCOM")
+
+colnames(REI_21)
+
 
 
 # REI_21 <- as.data.table(read_excel(path = paste(repo_data, "REI_2021.xlsx", sep = "/"), skip = 1))
@@ -110,16 +157,21 @@ chemin_fichier <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution/Data
 # REI_21 <- read_excel(chemin_fichier, col_names = liste_cols_REI)
 
 
+
 # REI_21 <- read.xlsx(chemin_fichier, cols = liste_cols_REI)
-REI_21 <- read.xlsx(chemin_fichier)
-rei <- data.table(REI_21)
 
 
 # REI_21 <- readxl::read_xlsx(chemin_fichier)
 # rei2 <- data.table(REI_21)
 
-nrow(rei2)
-length(colnames(rei2))
+nrow(rei)
+length(colnames(rei))
+
+sous_rei <- rei[, ..liste_cols_REI] 
+  
+  
+
+
 ################################################################################
 ################### BROUILLON GABRIEL ########################################## 
 ################################################################################
