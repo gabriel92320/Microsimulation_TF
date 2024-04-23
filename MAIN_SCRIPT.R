@@ -57,127 +57,65 @@ liste_cols_REI_loc <- c("DEPARTEMENT",
                        "COMMUNE",
                        "Numéro.national.du.groupement",
                        "FB.-.COMMUNE./.TAUX.NET", # Le Tx communal 
-                       "FB.-.GFP./.TAUX.APPLICABLE.SUR.LE.TERRITOIRE.DE.LA.COMMUNE", # Le Tx GFP = EPCI ?
-                       "FB.-.TSE./.TAUX.NET", # TAXE SPECIALE D'EQUIPEMENT 
+                       "FB.-.GFP./.TAUX.VOTE", # Le taux pour le montant brut à l'échelle du GFP = EPCI
+                       "FB.-.GFP./.TAUX.APPLICABLE.SUR.LE.TERRITOIRE.DE.LA.COMMUNE", # Le tx pour montant net
                        "Libellé.commune")
 
 dt_merged_REI <- Importer_et_merge_DT_REI(liste_cols_REI_loc)
 
-dt_merged_REI[is.na(FB_TSE_TAUX_NET)] # Bon on n'a pas les outre mer...
-100*nrow(dt_merged_REI[is.na(FB_TSE_TAUX_NET)])/nrow(dt_merged_REI) # Bon ça fait 0.21% des observations pas très grave sans doute
+dt_merged_REI[is.na(Libelle_commune)] # Bon on n'a pas les outre mer...
+100*nrow(dt_merged_REI[is.na(Libelle_commune)])/nrow(dt_merged_REI) # Bon ça fait 0.21% des observations pas très grave sans doute
+
+
 
 ################################################################################
 ################### BROUILLON BENJAMIN ######################################### 
 ################################################################################
-######### DOCUMENTATION A METTRE SUR GIT #######################################
 
-# GFP = EPCI 
-# Le taux par département était là en 2016, mais pas en 2021... 
-# https://www.impots.gouv.fr/sites/default/files/media/8_transverse/open_data/tf/nid_13063_algorithme_tf.pdf ==> Il n'y a plus que des taux par communes et par EPCI ?
-
-l <- c("ccocom", "ccoifp")
-dt_merged_REI[ccodep == "83"][,..l]
-
-table(dt_merged_REI$ccocom == dt_merged_REI$ccoifp)
-dt_merged_REI[ccocom != ccoifp]
-
-dt_merged_REI[, .N, by = "Numéro_national_du_groupement"]
-dt_merged_REI[Numéro_national_du_groupement == "010002"]$FB_TSE_TAUX_NET
-
-# liste_cols_REI <- c("DEP", # DEPARTEMENT
-#                     "DIR", # DIRECTION
-#                     "COM", # COMMUNE
-#                     "Q02", # Numero national du Groupement
-#                     "SIREPCI", # Numéro SIREN de l'EPCI
-#                     "Q03", # Libellé du Groupement
-#                     "OPTEPCI", # Option fiscale de l'EPCI (FPA, FPU ou FPZ)
-#                     "FORJEPCI", # Forme jurisique EPCI (CA, CU, CC, SAN ou Mét)
-#                     "LIBCOM", # Commune
-#                     "E00", # FB - FRAIS D'ASSIETTE, DEGREVEMENT,  NON VALEURS
-#                     "E11", # FB - COMMUNE / BASE NETTE
-#                     "E12", # FB - COMMUNE / TAUX NET = "Taux de TFB net voté par la commune.  Sur le territoire des communes nouvelles concernées par une intégration fiscale progressive (dispositif de convergence des taux suite à une fusion/restructuration), ce taux est recalculé et correspond donc au taux appliqué sur le territoire de la commune.
-#                     "E13", # FB - COMMUNE / MONTANT REEL
-#                     "E14", # FB - COMMUNE / NOMBRE D'ARTICLES
-#                     "E16", # FB - COMMUNE / MONTANT LISSAGE
-#                     "E31", # FB - GFP / BASE NETTE
-#                     "E32", # FB - GFP / TAUX APPLICABLE SUR LE TERRITOIRE DE LA COMMUNE = "Le taux intercommunal applicable sur le territoire de la commune doit être distingué du taux voté par l'EPCI à fiscalité propre (variable E32VOTE). Le taux applicable est recalculé sur le territoire de la commune. Ainsi, pour les EPCI à fiscalité propre concernés par une intégration fiscale progressive (dispositif de convergence des taux suite à une fusion/restructuration), ce taux applicable sera différent d'une commune membre à l'autre alors que le taux voté est unique.
-#                     "E32VOTE", # FB - GFP / TAUX VOTE =  "Taux voté par l'EPCI à fiscalité propre.  Il peut être différent du taux applicable sur le territoire de la commune (variable B32) dans les cas d'intégration fiscale progressif (dispositif de convergence des taux)."
-#                     "E33", # FB - GFP / MONTANT REEL
-#                     "E36", # FB - GFP / MONTANT LISSAGE
-#                     "E51", # FB - TSE / BASE NETTE
-#                     "E52", # FB - TSE / TAUX NET = "Taux de TSE adossée à la TFB :  A la manière d'un syndicat, l'EPF ne vote pas un taux mais un produit, dans la limite d'un plafond fixé à 20€ par habitant situé dans son périmètre. Le produit est réparti entre toutes les personnes physiques ou morales assujetties aux TF, à la TH et à la CFE dans les communes comprises dans la zone de compétence de l'établissement. Cela permet de déterminer les fractions supplémentaires de taux qui figureront de manière isolée dans les rôles d'imposition des contribuables.
-#                     "IDCOM")
+# Fixage des types
+dt_merged_REI$vlbaia <- as.numeric(dt_merged_REI$vlbaia)
+dt_merged_REI$bipeva <- as.numeric(dt_merged_REI$bipeva)
+dt_merged_REI$bateom <- as.numeric(dt_merged_REI$bateom)
+dt_merged_REI$mvltieomx <- as.numeric(dt_merged_REI$mvltieomx)
+dt_merged_REI$baomec <- as.numeric(dt_merged_REI$baomec)
 
 
-# Lyon 1er Arrondissement (69381)
-# Lyon 2e Arrondissement (69382)
-# Lyon 3e Arrondissement (69383)
-# Lyon 4e Arrondissement (69384)
-# Lyon 5e Arrondissement (69385)
-# Lyon 6e Arrondissement (69386)
-# Lyon 7e Arrondissement (69387)
-# Lyon 8e Arrondissement (69388)
-# Lyon 9e Arrondissement (69389)
+# Un premier calcul de la taxe foncière brute
+summary(dt_merged_REI$vlbaia - 2*dt_merged_REI$bipeva) # bipeva = 1/2 de la VLC ==> Ce qu'on prend comme valeur de référence pour l'impôt
 
-# Marseille 1er Arrondissement (13201)
-# Marseille 2e Arrondissement (13202)
-# Marseille 3e Arrondissement (13203)
-# Marseille 4e Arrondissement (13204)
-# Marseille 5e Arrondissement (13205)
-# Marseille 6e Arrondissement (13206)
-# Marseille 7e Arrondissement (13207)
-# Marseille 8e Arrondissement (13208)
-# Marseille 9e Arrondissement (13209)
-# Marseille 10e Arrondissement (13210)
-# Marseille 11e Arrondissement (13211)
-# Marseille 12e Arrondissement (13212)
-# Marseille 13e Arrondissement (13213)
-# Marseille 14e Arrondissement (13214)
-# Marseille 15e Arrondissement (13215)
-# Marseille 16e Arrondissement (13216)
+dt_merged_REI[, Montant_communal_TF := FB_COMMUNE_TAUX_NET * bipeva/100]
+dt_merged_REI[, Montant_GFP_TF := FB_GFP_TAUX_VOTE * bipeva/100]
+dt_merged_REI[, Montant_TF_BRUT := Montant_communal_TF + Montant_GFP_TF]
 
-# Paris 1er Arrondissement (75101)
-# Paris 2e Arrondissement (75102)
-# Paris 3e Arrondissement (75103)
-# Paris 4e Arrondissement (75104)
-# Paris 5e Arrondissement (75105)
-# Paris 6e Arrondissement (75106)
-# Paris 7e Arrondissement (75107)
-# Paris 8e Arrondissement (75108)
-# Paris 9e Arrondissement (75109)
-# Paris 10e Arrondissement (75110)
-# Paris 11e Arrondissement (75111)
-# Paris 12e Arrondissement (75112)
-# Paris 13e Arrondissement (75113)
-# Paris 14e Arrondissement (75114)
-# Paris 15e Arrondissement (75115)
-# Paris 16e Arrondissement (75116)
-# Paris 17e Arrondissement (75117)
-# Paris 18e Arrondissement (75118)
-# Paris 19e Arrondissement (75119)
-# Paris 20e Arrondissement (75120)
+summary(dt_merged_REI$Montant_TF_BRUT)
+summary(dt_merged_REI$FB_COMMUNE_TAUX_NET)
+
+
+dt_merged_REI[, Montant_TF_BRUT_menage := sum(Montant_TF_BRUT, na.rm = TRUE), by = 'ident21'] # On calcule la taxe totale payée par le ménage
 
 
 
-# ident = identifiant ménage
-# aspa = Allocation solidarité aux personnes âgées
-# asi = Allocation supplémentaire d'invalidité
-# aah = Allocation aux adultes handicapés
-# poi = le poids
-# age_pr = Âge personne référence
-# decile_ndv = décile niveau de vie
-# rfr = revenu fiscal de référence
+data_loc <- dt_merged_REI[, mean(Montant_TF_BRUT_menage, na.rm = TRUE), by = "decile_ndv"]
+x <- "decile_ndv"
+y <- "V1"
+xlabel <- "Décile de niveau de vie du ménage"
+ylabel <- "Montant de la taxe foncière brute moyenne "
+titre <- "Montant moyen de la taxe foncière brute payée par les ménages, en fonction du décile de niveau de vie"
 
-# https://www.collectivites-locales.gouv.fr/sites/default/files/migration/ffs_2020_bati.pdf = notice pour carac_tf ???
-# vlbaia = part de la valeur locative imposée (valeur de l'année)
-# bipeva = base d'imposition de la PEV (valeur de l'année)
-# bateom = Base d'imposition de la PEV prise en compte pour la taxe d'enlèvement des ordure ménagères
-# baomec = Base d'imposition écrêtée de la PEV, càd non prise en compte pour la taxe d'enlèvement des ordures ménagères
-# mvltieomx = Montant TIEOM = Taxe d'enlevèment des ordures ménagères ?
-# nb_prop = Nb de proprio ?
-# ccodep = département
-# ccocom = commune
-# ccoifp = IFP ??? (le 3ème niveau de collectivité territoriale j'imagine)
+ggplot(data = data_loc, aes(x = .data[[x]], y = .data[[y]])) +
+  geom_bar(stat="identity", position=position_dodge()) + 
+  labs(title=titre,
+       x= xlabel,
+       y= ylabel) + 
+  scale_y_continuous(labels = scales::dollar_format(
+    prefix = "",
+    suffix = "€",
+    big.mark = " ",
+    decimal.mark = ",")) +
+  scale_fill_viridis(discrete = TRUE) +
+  scale_color_viridis() +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),
+        text = element_text(size = 25))
 
 
 

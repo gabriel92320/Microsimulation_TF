@@ -23,10 +23,12 @@ Importer_et_merge_DT_REI <- function(liste_cols_REI_loc){
   SOUS_REI <- SOUS_REI[,..liste_cols_REI_loc]
   
   # Faire quelques setnames pour éviter les problèmes
-  try(setnames(SOUS_REI, "Numéro.national.du.groupement", "Numéro_national_du_groupement"), silent = TRUE)
-  try(setnames(SOUS_REI, "FB.-.COMMUNE./.TAUX.NET", "FB_COMMUNE_TAUX.NET"), silent = TRUE)
+  try(setnames(SOUS_REI, "Numéro.national.du.groupement", "Numero_national_du_groupement"), silent = TRUE)
+  try(setnames(SOUS_REI, "FB.-.COMMUNE./.TAUX.NET", "FB_COMMUNE_TAUX_NET"), silent = TRUE)
   try(setnames(SOUS_REI, "FB.-.GFP./.TAUX.APPLICABLE.SUR.LE.TERRITOIRE.DE.LA.COMMUNE", "FN_GFP_TAUX_APPLICABLE_SUR_LE_TERRITOIRE_DE_LA_COMMUNE"), silent = TRUE)
   try(setnames(SOUS_REI, "FB.-.TSE./.TAUX.NET", "FB_TSE_TAUX_NET"), silent = TRUE)
+  try(setnames(SOUS_REI, "Libellé.commune", "Libelle_commune"), silent = TRUE)
+  try(setnames(SOUS_REI, "FB.-.GFP./.TAUX.VOTE", "FB_GFP_TAUX_VOTE"), silent = TRUE)
   
   
   # Importer carac_men et carac_tf
