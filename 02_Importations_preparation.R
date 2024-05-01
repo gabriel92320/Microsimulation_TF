@@ -35,6 +35,8 @@ Importer_et_merge_REI_carac_tf <- function(liste_cols_REI_loc){
   # carac_men <- data.table(readRDS(paste(repo_data, "carac_men.rds", sep = "/")))
   carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
   
+  
+  carac_tf <- copy(unique(carac_tf)) # Pour virer les logements en double
   # Merge TF et MEN
   # dt_merged <- merge(carac_tf, carac_men, by.x = "ident21", by.y = "ident")
   

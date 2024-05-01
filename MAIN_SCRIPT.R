@@ -111,6 +111,8 @@ nrow(carac_tf)
 
 
 
+
+
 nrow(dt_merged_REI[Montant_TF_NETTE < 0]) # 8 lignes ont un tx négatif
 # Pour vérifier les conditions ==> Ce sont des logements dégrévés
 merge(dt_merged_REI[Montant_TF_NETTE < 0], carac_men, all.x = TRUE, all.y = FALSE, by.x = "ident21", by.y = "ident")

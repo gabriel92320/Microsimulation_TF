@@ -42,14 +42,8 @@ Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc){
   liste_ident_exonerees_res_princ <- carac_men_loc[(aspa == '1') |
                                                      # (age_pr >= 75 & rfr < 11885) |
                                                      (aah == "1" & rfr < 11885), ]$ident
-  
   liste_ident_exonerees_toutes_res <- carac_men_loc[(age_pr >= 75 & rfr < 11885), ]$ident
-  
   liste_ident_degreves_res_princ <- carac_men_loc[age_pr >= 65 & rfr < 11885 & age_pr < 75, ]$ident
-  
-  # "21001668" %in% liste_ident_degreves_res_princ
-  # carac_men_loc[ident == "21001668"]
-  # dt_merged_REI_loc[ident21 == "21001668"]
   
   
   Assigner_res_principale(dt_merged_REI_loc)
