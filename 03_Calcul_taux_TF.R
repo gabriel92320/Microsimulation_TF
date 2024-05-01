@@ -47,6 +47,10 @@ Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc){
   
   liste_ident_degreves_res_princ <- carac_men_loc[age_pr >= 65 & rfr < 11885 & age_pr < 75, ]$ident
   
+  # "21001668" %in% liste_ident_degreves_res_princ
+  # carac_men_loc[ident == "21001668"]
+  # dt_merged_REI_loc[ident21 == "21001668"]
+  
   
   Assigner_res_principale(dt_merged_REI_loc)
   
@@ -62,8 +66,8 @@ Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc){
   
   # Calculer bipeva_net qui prend en compte exonération et dégrèvement
   dt_merged_REI_loc[, Montant_TF_NETTE := Montant_TF_BRUT] # On calcule le net
+  dt_merged_REI_loc[Logement_degreve == TRUE, Montant_TF_NETTE := Montant_TF_NETTE - 100] # On retire les logements dégrévés ==> QUESTION : SI ON TOMBE SUR UN NB NEGATIF ????? 8 lignes concernées
   dt_merged_REI_loc[Logement_exonere == TRUE, Montant_TF_NETTE := 0] # On retire les logements exonérés
-  dt_merged_REI_loc[Logement_degreve == TRUE, Montant_TF_NETTE := Montant_TF_NETTE - 100] # On retire les logements dégrévés ==> QUESTION : SI ON TOMBE SUR UN NB NEGATIF ????? 62 lignes concernées
-  
+
   return(dt_merged_REI_loc)
 }

@@ -101,72 +101,19 @@ summary(dt_merged_REI$Montant_TF_NETTE)
 table(dt_merged_REI$Montant_TF_BRUT > dt_merged_REI$Montant_TF_NETTE) # 762 ménages ont une diminution de la TF
 
 
+# Logements en double ??????
+carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
+carac_tf[ident21 == "21038699"] # Hum hum il y a un logement en double là...
 
-
-# # Les ménages complètement exonérés
-# carac_men[(aspa == '1') |
-#                 (aah == "1" & rfr < 11885) |
-#                 (age_pr >= 75 & rfr < 11885), Menage_exonere := TRUE]
-# carac_men[is.na(Menage_exonere), Menage_exonere := FALSE]
-# 
-# 
-# # Les ménages qui ont un dégrèvement de 100 euros
-# carac_men[age_pr >= 65 & rfr < 11885 & age_pr < 75, Menage_degreve := TRUE]
-# carac_men[is.na(Menage_degreve), Menage_degreve := FALSE]
-# 
-# 
-# 
-# # Attention : en général c'est uniquement sur la résidence principale
-# liste_ident <- carac_men[Menage_degreve == TRUE, ]$ident
-# table(carac_tf[ident21 %in% liste_ident, .N, by = "ident21"]$N) # Il y a des mutlipropriétaires ==> Pour ceux là on choisi le logement le plus cher à exonérer (cohérent que ça soit la résidence principale)
-# 
-# 
-# Assigner_logement_degreve <- function(dt) {
-#   # Trouver l'indice de la ligne ayant la valeur bipeva maximale pour chaque ménage
-#   indices_max <- dt[, .I[which.max(bipeva)], by = ident21]$V1
-#   
-#   dt[, Logement_degreve := FALSE]
-#   # Attribuer TRUE aux lignes avec les indices trouvés
-#   dt[indices_max, Logement_degreve := TRUE]
-# }
-# 
-# # Appliquez la fonction pour créer la colonne Logement_degreve
-# Assigner_logement_degreve(carac_tf)
-# 
-# 
-# 
-# 
-# carac_tf[Logement_degreve == TRUE, .N, by = "ident21"]
-# carac_tf[, .N, by = "ident21"]
-# carac_tf[ident21 == "21043710"]
-
-
-# dt_merged_REI[, Montant_TF_BRUT_menage := sum(Montant_TF_BRUT, na.rm = TRUE), by = 'ident21'] # On calcule la taxe totale payée par le ménage
+# En fait il y en a beaucoup !!!
+nrow(unique(carac_tf))
+nrow(carac_tf)
 
 
 
-# data_loc <- dt_merged_REI[, mean(Montant_TF_BRUT_menage, na.rm = TRUE), by = "decile_ndv"]
-# x <- "decile_ndv"
-# y <- "V1"
-# xlabel <- "Décile de niveau de vie du ménage"
-# ylabel <- "Montant de la taxe foncière brute moyenne "
-# titre <- "Montant moyen de la taxe foncière brute payée par les ménages, en fonction du décile de niveau de vie"
-# 
-# ggplot(data = data_loc, aes(x = .data[[x]], y = .data[[y]])) +
-#   geom_bar(stat="identity", position=position_dodge()) + 
-#   labs(title=titre,
-#        x= xlabel,
-#        y= ylabel) + 
-#   scale_y_continuous(labels = scales::dollar_format(
-#     prefix = "",
-#     suffix = "€",
-#     big.mark = " ",
-#     decimal.mark = ",")) +
-#   scale_fill_viridis(discrete = TRUE) +
-#   scale_color_viridis() +
-#   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),
-#         text = element_text(size = 25))
-
+nrow(dt_merged_REI[Montant_TF_NETTE < 0]) # 8 lignes ont un tx négatif
+# Pour vérifier les conditions ==> Ce sont des logements dégrévés
+merge(dt_merged_REI[Montant_TF_NETTE < 0], carac_men, all.x = TRUE, all.y = FALSE, by.x = "ident21", by.y = "ident")
 
 
 
