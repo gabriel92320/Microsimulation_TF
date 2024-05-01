@@ -13,8 +13,8 @@ Faire_dt_SOUS_REI <- function(liste_cols_REI_loc){
   save(SOUS_REI, file = paste(repo_bases_intermediaires, "REI_2021_SELECT.RData", sep = "/"))
 }
 
-Importer_et_merge_DT_REI <- function(liste_cols_REI_loc){
-  # Importe et merge : carac_men, carac_tf et SOUS_REI. On ne garde que quelques colonnes de SOUS_REI
+Importer_et_merge_REI_carac_tf <- function(liste_cols_REI_loc){
+  # Importe et merge : carac_tf et SOUS_REI. On ne garde que quelques colonnes de SOUS_REI
   # Retourne le dt merged
   # ATTENTION SI ON AJOUTE DES COLONNES IL VA FALLOIR SANS DOUTE AJOUTER DES SETNAMES
   
@@ -32,15 +32,15 @@ Importer_et_merge_DT_REI <- function(liste_cols_REI_loc){
   
   
   # Importer carac_men et carac_tf
-  carac_men <- data.table(readRDS(paste(repo_data, "carac_men.rds", sep = "/")))
+  # carac_men <- data.table(readRDS(paste(repo_data, "carac_men.rds", sep = "/")))
   carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
   
   # Merge TF et MEN
-  dt_merged <- merge(carac_tf, carac_men, by.x = "ident21", by.y = "ident")
+  # dt_merged <- merge(carac_tf, carac_men, by.x = "ident21", by.y = "ident")
   
   # Faire attention au typage
-  dt_merged$ccocom_REI <- as.factor(dt_merged$ccocom_REI)
-  dt_merged$ccodep <- as.factor(dt_merged$ccodep)
+  carac_tf$ccocom_REI <- as.factor(carac_tf$ccocom_REI)
+  carac_tf$ccodep <- as.factor(carac_tf$ccodep)
   SOUS_REI$DEPARTEMENT <- as.factor(SOUS_REI$DEPARTEMENT)
   SOUS_REI$COMMUNE <- as.factor(SOUS_REI$COMMUNE)
   
@@ -49,13 +49,14 @@ Importer_et_merge_DT_REI <- function(liste_cols_REI_loc){
   liste_num_Marseille <- 201:216
   liste_num_Paris <- 101:120
   
-  dt_merged[, ccocom_REI := ccocom]
-  dt_merged[ccodep == "69" & ccocom_REI %in% liste_num_Lyon, ccocom_REI := "123"] # On met le code de la commune pour avoir le REU, et pas le code des arrondissement
-  dt_merged[ccodep == "13" & ccocom_REI %in% liste_num_Marseille, ccocom_REI := "055"] 
-  dt_merged[ccodep == "75" & ccocom_REI %in% liste_num_Paris, ccocom_REI := "056"]
+  carac_tf[, ccocom_REI := ccocom]
+  carac_tf[ccodep == "69" & ccocom_REI %in% liste_num_Lyon, ccocom_REI := "123"] # On met le code de la commune pour avoir le REU, et pas le code des arrondissement
+  carac_tf[ccodep == "13" & ccocom_REI %in% liste_num_Marseille, ccocom_REI := "055"] 
+  carac_tf[ccodep == "75" & ccocom_REI %in% liste_num_Paris, ccocom_REI := "056"]
   
   # Puis Merge merged et REI
-  dt_merged_REI_loc <- merge(dt_merged, SOUS_REI, by.x = c("ccodep", "ccocom_REI"), by.y = c("DEPARTEMENT", "COMMUNE"), all.x = TRUE)
+  dt_merged_REI_loc <- merge(carac_tf, SOUS_REI, by.x = c("ccodep", "ccocom_REI"), by.y = c("DEPARTEMENT", "COMMUNE"), all.x = TRUE)
   
   return(dt_merged_REI_loc)
 }
+

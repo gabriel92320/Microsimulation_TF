@@ -6,8 +6,8 @@
 # =========== 00 = REGLAGES ET PARAMETRES ======================================
 ################################################################################
 
-#repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
-repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
+repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
+# repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
 
 
 repo_prgm <- paste(repgen, "MicrosimulationTF" , sep = "/")
@@ -24,6 +24,7 @@ repo_bases_intermediaires <- paste(repgen, "Bases_intermediaires" , sep = "/")
 ################################################################################
 source(paste(repo_prgm , "01_packages.R" , sep = "/"))
 source(paste(repo_prgm , "02_Importations_preparation.R" , sep = "/"))
+source(paste(repo_prgm , "03_Calcul_taux_TF.R" , sep = "/"))
 
 ################################################################################
 # ================= 02 = PREPARATION DES DT  ===================================
@@ -62,62 +63,109 @@ liste_cols_REI_loc <- c("DEPARTEMENT",
                        "FB.-.GFP./.TAUX.APPLICABLE.SUR.LE.TERRITOIRE.DE.LA.COMMUNE", # Le tx pour montant net
                        "Libellé.commune")
 
-dt_merged_REI <- Importer_et_merge_DT_REI(liste_cols_REI_loc)
 
-dt_merged_REI[is.na(Libelle_commune)] # Bon on n'a pas les outre mer...
-100*nrow(dt_merged_REI[is.na(Libelle_commune)])/nrow(dt_merged_REI) # Bon ça fait 0.21% des observations pas très grave sans doute
+# On merge REI et carac_tf, on est donc à l'échelle du LOGEMENT
+dt_merged_REI <- Importer_et_merge_REI_carac_tf(liste_cols_REI_loc)
 
+# On calcule la TF brute par logement
+dt_merged_REI_loc <- copy(dt_merged_REI)
+dt_merged_REI <- Calculer_taux_brut(dt_merged_REI_loc)
+  
+# On importe aussi carac_men
+carac_men <- data.table(readRDS(paste(repo_data, "carac_men.rds", sep = "/")))
+
+# On calcule la TF nette par logement
+carac_men_loc <- copy(carac_men)
+dt_merged_REI_loc <- copy(dt_merged_REI)
+dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc)
+  
 
 
 ################################################################################
 ################### BROUILLON BENJAMIN ######################################### 
 ################################################################################
 
-
-# Fixage des types
-dt_merged_REI$vlbaia <- as.numeric(dt_merged_REI$vlbaia)
-dt_merged_REI$bipeva <- as.numeric(dt_merged_REI$bipeva)
-dt_merged_REI$bateom <- as.numeric(dt_merged_REI$bateom)
-dt_merged_REI$mvltieomx <- as.numeric(dt_merged_REI$mvltieomx)
-dt_merged_REI$baomec <- as.numeric(dt_merged_REI$baomec)
-
-
+##### QQ VERIFS ##############
 # Un premier calcul de la taxe foncière brute
 summary(dt_merged_REI$vlbaia - 2*dt_merged_REI$bipeva) # bipeva = 1/2 de la VLC ==> Ce qu'on prend comme valeur de référence pour l'impôt
 
-dt_merged_REI[, Montant_communal_TF := FB_COMMUNE_TAUX_NET * bipeva/100]
-dt_merged_REI[, Montant_GFP_TF := FB_GFP_TAUX_VOTE * bipeva/100]
-dt_merged_REI[, Montant_TF_BRUT := Montant_communal_TF + Montant_GFP_TF]
+dt_merged_REI[is.na(Libelle_commune)] # Bon on n'a pas les outre mer...
+100*nrow(dt_merged_REI[is.na(Libelle_commune)])/nrow(dt_merged_REI) # Bon ça fait 0.21% des observations pas très grave sans doute
+
+table(dt_merged_REI$Logement_degreve)
+table(dt_merged_REI$Logement_exonere)
 
 summary(dt_merged_REI$Montant_TF_BRUT)
-summary(dt_merged_REI$FB_COMMUNE_TAUX_NET)
+summary(dt_merged_REI$Montant_TF_NETTE)
+
+table(dt_merged_REI$Montant_TF_BRUT > dt_merged_REI$Montant_TF_NETTE) # 762 ménages ont une diminution de la TF
 
 
-dt_merged_REI[, Montant_TF_BRUT_menage := sum(Montant_TF_BRUT, na.rm = TRUE), by = 'ident21'] # On calcule la taxe totale payée par le ménage
+
+
+# # Les ménages complètement exonérés
+# carac_men[(aspa == '1') |
+#                 (aah == "1" & rfr < 11885) |
+#                 (age_pr >= 75 & rfr < 11885), Menage_exonere := TRUE]
+# carac_men[is.na(Menage_exonere), Menage_exonere := FALSE]
+# 
+# 
+# # Les ménages qui ont un dégrèvement de 100 euros
+# carac_men[age_pr >= 65 & rfr < 11885 & age_pr < 75, Menage_degreve := TRUE]
+# carac_men[is.na(Menage_degreve), Menage_degreve := FALSE]
+# 
+# 
+# 
+# # Attention : en général c'est uniquement sur la résidence principale
+# liste_ident <- carac_men[Menage_degreve == TRUE, ]$ident
+# table(carac_tf[ident21 %in% liste_ident, .N, by = "ident21"]$N) # Il y a des mutlipropriétaires ==> Pour ceux là on choisi le logement le plus cher à exonérer (cohérent que ça soit la résidence principale)
+# 
+# 
+# Assigner_logement_degreve <- function(dt) {
+#   # Trouver l'indice de la ligne ayant la valeur bipeva maximale pour chaque ménage
+#   indices_max <- dt[, .I[which.max(bipeva)], by = ident21]$V1
+#   
+#   dt[, Logement_degreve := FALSE]
+#   # Attribuer TRUE aux lignes avec les indices trouvés
+#   dt[indices_max, Logement_degreve := TRUE]
+# }
+# 
+# # Appliquez la fonction pour créer la colonne Logement_degreve
+# Assigner_logement_degreve(carac_tf)
+# 
+# 
+# 
+# 
+# carac_tf[Logement_degreve == TRUE, .N, by = "ident21"]
+# carac_tf[, .N, by = "ident21"]
+# carac_tf[ident21 == "21043710"]
+
+
+# dt_merged_REI[, Montant_TF_BRUT_menage := sum(Montant_TF_BRUT, na.rm = TRUE), by = 'ident21'] # On calcule la taxe totale payée par le ménage
 
 
 
-data_loc <- dt_merged_REI[, mean(Montant_TF_BRUT_menage, na.rm = TRUE), by = "decile_ndv"]
-x <- "decile_ndv"
-y <- "V1"
-xlabel <- "Décile de niveau de vie du ménage"
-ylabel <- "Montant de la taxe foncière brute moyenne "
-titre <- "Montant moyen de la taxe foncière brute payée par les ménages, en fonction du décile de niveau de vie"
-
-ggplot(data = data_loc, aes(x = .data[[x]], y = .data[[y]])) +
-  geom_bar(stat="identity", position=position_dodge()) + 
-  labs(title=titre,
-       x= xlabel,
-       y= ylabel) + 
-  scale_y_continuous(labels = scales::dollar_format(
-    prefix = "",
-    suffix = "€",
-    big.mark = " ",
-    decimal.mark = ",")) +
-  scale_fill_viridis(discrete = TRUE) +
-  scale_color_viridis() +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),
-        text = element_text(size = 25))
+# data_loc <- dt_merged_REI[, mean(Montant_TF_BRUT_menage, na.rm = TRUE), by = "decile_ndv"]
+# x <- "decile_ndv"
+# y <- "V1"
+# xlabel <- "Décile de niveau de vie du ménage"
+# ylabel <- "Montant de la taxe foncière brute moyenne "
+# titre <- "Montant moyen de la taxe foncière brute payée par les ménages, en fonction du décile de niveau de vie"
+# 
+# ggplot(data = data_loc, aes(x = .data[[x]], y = .data[[y]])) +
+#   geom_bar(stat="identity", position=position_dodge()) + 
+#   labs(title=titre,
+#        x= xlabel,
+#        y= ylabel) + 
+#   scale_y_continuous(labels = scales::dollar_format(
+#     prefix = "",
+#     suffix = "€",
+#     big.mark = " ",
+#     decimal.mark = ",")) +
+#   scale_fill_viridis(discrete = TRUE) +
+#   scale_color_viridis() +
+#   theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1),
+#         text = element_text(size = 25))
 
 
 
