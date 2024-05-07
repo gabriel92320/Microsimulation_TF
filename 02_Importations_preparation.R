@@ -36,28 +36,45 @@ Importer_et_merge_REI_carac_tf <- function(liste_cols_REI_loc){
   carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
   
   
-  carac_tf <- copy(unique(carac_tf)) # Pour virer les logements en double
+  # carac_tf <- copy(unique(carac_tf)) # Pour virer les logements en double ==> EN FAIT NON ON PRORATISE APRES
   # Merge TF et MEN
   # dt_merged <- merge(carac_tf, carac_men, by.x = "ident21", by.y = "ident")
   
-  # Faire attention au typage
-  carac_tf$ccocom_REI <- as.factor(carac_tf$ccocom_REI)
-  carac_tf$ccodep <- as.factor(carac_tf$ccodep)
-  SOUS_REI$DEPARTEMENT <- as.factor(SOUS_REI$DEPARTEMENT)
-  SOUS_REI$COMMUNE <- as.factor(SOUS_REI$COMMUNE)
+  
+  # Convertir les colonnes en character
+  carac_tf[, ccocom_REI := as.character(ccocom)]
+  carac_tf[, ccodep := as.character(ccodep)]
+  SOUS_REI[, DEPARTEMENT := as.character(DEPARTEMENT)]
+  SOUS_REI[, COMMUNE := as.character(COMMUNE)]
+  
+  # Ajouter des zéros au début si nécessaire pour obtenir un identifiant à trois chiffres
+  carac_tf[, ccocom_REI := sprintf("%03d", as.integer(ccocom_REI))]
+  carac_tf[, ccoifp := sprintf("%03d", as.integer(ccoifp))]
+  carac_tf[, ccocom := sprintf("%03d", as.integer(ccocom))]
+  
+  
+
   
   # ATTENTION pour Lyon, Paris, Marseille il faut changer le ccocom pour mettre le code de la commune, et non pas des arrondissements
-  liste_num_Lyon <- 381:389
-  liste_num_Marseille <- 201:216
-  liste_num_Paris <- 101:120
+  liste_num_Lyon <- as.character(381:389)
+  liste_num_Marseille <- as.character(201:216)
+  liste_num_Paris <- as.character(101:120)
   
   carac_tf[, ccocom_REI := ccocom]
   carac_tf[ccodep == "69" & ccocom_REI %in% liste_num_Lyon, ccocom_REI := "123"] # On met le code de la commune pour avoir le REU, et pas le code des arrondissement
   carac_tf[ccodep == "13" & ccocom_REI %in% liste_num_Marseille, ccocom_REI := "055"] 
   carac_tf[ccodep == "75" & ccocom_REI %in% liste_num_Paris, ccocom_REI := "056"]
   
+  # Faire attention au typage
+  carac_tf$ccocom_REI <- as.factor(carac_tf$ccocom_REI)
+  carac_tf$ccodep <- as.factor(carac_tf$ccodep)
+  SOUS_REI$DEPARTEMENT <- as.factor(SOUS_REI$DEPARTEMENT)
+  SOUS_REI$COMMUNE <- as.factor(SOUS_REI$COMMUNE)  
+  
   # Puis Merge merged et REI
   dt_merged_REI_loc <- merge(carac_tf, SOUS_REI, by.x = c("ccodep", "ccocom_REI"), by.y = c("DEPARTEMENT", "COMMUNE"), all.x = TRUE)
+  
+  
   
   return(dt_merged_REI_loc)
 }

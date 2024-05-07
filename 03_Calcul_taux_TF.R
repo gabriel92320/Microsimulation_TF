@@ -31,6 +31,8 @@ Calculer_taux_brut <- function(dt_merged_REI_loc){
   dt_merged_REI_loc[, Montant_GFP_TF := FN_GFP_TAUX_APPLICABLE_SUR_LE_TERRITOIRE_DE_LA_COMMUNE * bipeva/100]
   dt_merged_REI_loc[, Montant_TF_BRUT := Montant_communal_TF + Montant_GFP_TF]
   
+  dt_merged_REI_loc[, Montant_TF_BRUT_proratise := Montant_TF_BRUT/nb_prop]
+  
   return(dt_merged_REI_loc)
 }
 
@@ -63,5 +65,7 @@ Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc){
   dt_merged_REI_loc[Logement_degreve == TRUE, Montant_TF_NETTE := Montant_TF_NETTE - 100] # On retire les logements dégrévés ==> QUESTION : SI ON TOMBE SUR UN NB NEGATIF ????? 8 lignes concernées
   dt_merged_REI_loc[Logement_exonere == TRUE, Montant_TF_NETTE := 0] # On retire les logements exonérés
 
+  dt_merged_REI_loc[, Montant_TF_NETTE_proratise := Montant_TF_NETTE/nb_prop]
+  
   return(dt_merged_REI_loc)
 }

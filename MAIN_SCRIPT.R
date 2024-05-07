@@ -90,7 +90,7 @@ dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc)
 summary(dt_merged_REI$vlbaia - 2*dt_merged_REI$bipeva) # bipeva = 1/2 de la VLC ==> Ce qu'on prend comme valeur de référence pour l'impôt
 
 dt_merged_REI[is.na(Libelle_commune)] # Bon on n'a pas les outre mer...
-100*nrow(dt_merged_REI[is.na(Libelle_commune)])/nrow(dt_merged_REI) # Bon ça fait 0.21% des observations pas très grave sans doute
+100*nrow(dt_merged_REI[is.na(Libelle_commune)])/nrow(dt_merged_REI) # Bon ça fait 0.17% des observations pas très grave sans doute
 
 table(dt_merged_REI$Logement_degreve)
 table(dt_merged_REI$Logement_exonere)
@@ -98,7 +98,7 @@ table(dt_merged_REI$Logement_exonere)
 summary(dt_merged_REI$Montant_TF_BRUT)
 summary(dt_merged_REI$Montant_TF_NETTE)
 
-table(dt_merged_REI$Montant_TF_BRUT > dt_merged_REI$Montant_TF_NETTE) # 762 ménages ont une diminution de la TF
+table(dt_merged_REI$Montant_TF_BRUT > dt_merged_REI$Montant_TF_NETTE) # 749 ménages ont une diminution de la TF
 
 
 # Logements en double ??????
