@@ -37,10 +37,12 @@ Calculer_taux_brut <- function(dt_merged_REI_loc){
 }
 
 
-Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc){
+Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc, annee_loc = 2021){
   # Exonérations et dégrèvements ==> On se place à l'échelle du logement pour pouvoir prendre en compte l'aspet résidence principale/secondaire
   # Choix méthodo : pour les logements multipropriétaires, on considère que la résidence principale est le logement avec la plus haute valeur locative ==> On suppose que c'est aussi le logement qui a la plus haute valeur (+ intérêt fiscal du ménage optimisateur)
   
+  
+  #### Les propriétaires exonérés ou dégrévés sur critères sociaux
   liste_ident_exonerees_res_princ <- carac_men_loc[(aspa == '1') |
                                                      # (age_pr >= 75 & rfr < 11885) |
                                                      (aah == "1" & rfr < 11885), ]$ident
@@ -58,6 +60,11 @@ Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc){
   
   dt_merged_REI_loc[is.na(Logement_exonere), Logement_exonere:= FALSE]
   dt_merged_REI_loc[is.na(Logement_degreve), Logement_degreve:= FALSE]
+  
+  #### Les logements exonérés du fait de construction ou reconstruction récente
+  dt_merged_REI_loc[annee_loc >= jandeb & annee_loc < janimp, Logement_exonere := TRUE]
+  # JANDEB = année de début d’exonération
+  # JANIMP = année de retour à imposition
   
   
   # Calculer bipeva_net qui prend en compte exonération et dégrèvement

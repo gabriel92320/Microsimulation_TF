@@ -16,7 +16,7 @@ repo_data <- paste(repgen, "Data" , sep = "/")
 repo_bases_intermediaires <- paste(repgen, "Bases_intermediaires" , sep = "/")
 
 # Ici quelques paramètres généraux
-
+annee <- 2021 # Utilisé pour les exonérations : on regarde si l'année est avant ou après l'année de fin d'exonération post-construction
 
 
 ################################################################################
@@ -77,13 +77,25 @@ carac_men <- data.table(readRDS(paste(repo_data, "carac_men.rds", sep = "/")))
 # On calcule la TF nette par logement
 carac_men_loc <- copy(carac_men)
 dt_merged_REI_loc <- copy(dt_merged_REI)
-dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc)
+annee_loc <- annee
+dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc, annee_loc)
   
-
 
 ################################################################################
 ################### BROUILLON BENJAMIN ######################################### 
 ################################################################################
+nrow(dt_merged_REI[is.na(jandeb)])
+
+carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
+nrow(carac_tf[is.na(jandeb)])
+
+
+
+# dvldif2a janbil jandeb janimp pexb_C pexb_TS pexb_GC pexb_OM
+
+
+
+
 
 ##### QQ VERIFS ##############
 # Un premier calcul de la taxe foncière brute
