@@ -17,3 +17,5 @@ library(openxlsx) # Load on each new session
 library(readxl)
 
 library(pdftools) # Pour fusionner les pdf
+
+library(readxl)

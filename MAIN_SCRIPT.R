@@ -21,8 +21,8 @@
 # =========== 00 = REGLAGES ET PARAMETRES ======================================
 ################################################################################
 
-repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
-# repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
+#repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
+ repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
 
 
 repo_prgm <- paste(repgen, "MicrosimulationTF" , sep = "/")
@@ -118,7 +118,18 @@ liste_chemins_graphes <- c()
 # On commence par préparer le dt nécessaire à tracer le graphe
 dt_merged_REI_loc <- copy(dt_merged_REI)
 var_montant_TF <- "Montant_TF_NETTE_proratise"
+
+# Ventilation de la TFPB nette totale (en Md d'euros) et moyenne (en euros):
+
+# a. Par décile de niveau de vie des ménages 2021:
 TFPB_nette_decile_ndv_p <- Calcul_montant_tot_moy_TFPB_nivviem(dt_merged_REI_loc, var_montant_TF)
+# b. Par type de la commune (UU / hors UU): 
+#ATTENTION SEULES LES RESIDENCES PRINCIPALES SONT PRISES EN COMPTE ICI!!
+TFPB_nette_type_com_UU_p <- Calcul_montant_tot_moy_TFPB_type_com_UU(dt_merged_REI_loc, var_montant_TF)
+# c. Par statut de la commune (hors UU/Ville-centre/Banlieue/Ville isolée): 
+#ATTENTION SEULES LES RESIDENCES PRINCIPALES SONT PRISES EN COMPTE ICI!!
+TFPB_nette_statut_com_UU_p <- Calcul_montant_tot_moy_TFPB_statut_com_UU(dt_merged_REI_loc, var_montant_TF)
+
 
 
 ####### PARTIE 1 : MONTANT TOTAL DE LA TF NETTE

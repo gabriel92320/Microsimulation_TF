@@ -2,6 +2,8 @@
 ########### LES FONCTIONS POUR PREPARER LES GRAPHIQUES GGPLOT ##################
 ################################################################################
 
+# Fonction qui calcule le montant total de TFPB (en Md euros) et le montant moyen
+# (en euros) par décile de niveau de vie des ménages 2021:
 
 Calcul_montant_tot_moy_TFPB_nivviem <- function(dt_merged_REI_loc, var_montant_TF = "Montant_TF_BRUT"){
   # Calcule le montant total de TF par niveau de vie, avec pondération
@@ -38,6 +40,94 @@ Calcul_montant_tot_moy_TFPB_nivviem <- function(dt_merged_REI_loc, var_montant_T
   
   
   return(TFPB_decile_ndv_p)
+}
+
+# Fonction qui calcule le montant total de TFPB (en Md euros) et le montant moyen
+# (en euros) par type des communes en termes d'unité urbaine 2020
+# Type: commune dans une UU/ commune hors d'une UU.
+
+Calcul_montant_tot_moy_TFPB_type_com_UU <- function(dt_merged_REI_loc, var_montant_TF = "Montant_TF_BRUT"){
+  # Calcule le montant total de TF par type/statut de la commune
+  # (en termes de UU), avec pondération
+  
+  # Type de commune (dans une UU / hors d'une UU) 
+  # WARNING: pour pouvoir pondérer les montants de TFPB en fonction de la représentativité
+  # de chaque ménage ds la pop, on se limite ici aux seules résidences principales (dont
+  # on étudie la répartition par commune dans une UU ou hors d'une UU) 
+    dt_merged_REI_loc_t <- dt_merged_REI_loc %>%
+    tibble() %>%
+    filter(!(is.na(TYPE_COMMUNE_UU)) & (Residence_principale==T)) %>%
+    mutate(TYPE_COMMUNE_UU = factor(TYPE_COMMUNE_UU),
+           ident21 = factor(ident21)) 
+  
+  # Merge avec la table ménage pour récup les poids:
+    carac_men_tb <- as_tibble(carac_men) %>% mutate(ident = factor(ident))
+    dt_merged_REI_loc_t <- dt_merged_REI_loc_t %>% 
+      left_join(y = carac_men_tb, 
+                by = c("ident21" = "ident"))
+    
+  # Calculs avec pondération:
+  TFPB_type_com_UU_p <- dt_merged_REI_loc_t %>%
+    mutate(poi2=2*poi) %>%
+    group_by(TYPE_COMMUNE_UU) %>%
+    summarise(Nb_menages = sum(poi2,na.rm = T),
+              TFPB_tot = sum(get(var_montant_TF)*poi2,na.rm = T)
+    ) %>%
+    mutate(TFPB_moy = TFPB_tot/Nb_menages) %>%
+    mutate(Nb_menages2 = Nb_menages/1e6, #en millions de ménages
+           TFPB_tot2 = TFPB_tot/1e9 #en milliard d'euros
+    ) %>%
+    select(TYPE_COMMUNE_UU,Nb_menages2,TFPB_tot2,TFPB_moy) %>%
+    rename(Nb_menages=Nb_menages2,TFPB_tot=TFPB_tot2
+    )
+  
+  
+  return(TFPB_type_com_UU_p)
+}
+
+# Fonction qui calcule le montant total de TFPB (en Md euros) et le montant moyen
+# (en euros) par statut des communes en termes d'unité urbaine 2020
+# Statut: H (hors UU) / C (Ville-centre) / B (Banlieue) / I (Ville isolée)
+
+Calcul_montant_tot_moy_TFPB_statut_com_UU <- function(dt_merged_REI_loc, var_montant_TF = "Montant_TF_BRUT"){
+  # Calcule le montant total de TF par type/statut de la commune
+  # (en termes de UU), avec pondération
+  
+  # Type de commune (dans une UU / hors d'une UU) 
+  # WARNING: pour pouvoir pondérer les montants de TFPB en fonction de la représentativité
+  # de chaque ménage ds la pop, on se limite ici aux seules résidences principales (dont
+  # on étudie la répartition par commune dans une UU ou hors d'une UU) 
+  dt_merged_REI_loc_t <- dt_merged_REI_loc %>%
+    tibble() %>%
+    filter(!(is.na(STATUT_COM_UU)) & (Residence_principale==T)) %>%
+    mutate(STATUT_COM_UU = factor(STATUT_COM_UU),
+           ident21 = factor(ident21)) %>%
+    mutate(STATUT_COM_UU=fct_recode(STATUT_COM_UU,"Hors UU"="H","Ville-centre"="C",
+                                    "Banlieue"="B","Ville isolée"="I"))
+  
+  # Merge avec la table ménage pour récup les poids:
+  carac_men_tb <- as_tibble(carac_men) %>% mutate(ident = factor(ident))
+  dt_merged_REI_loc_t <- dt_merged_REI_loc_t %>% 
+    left_join(y = carac_men_tb, 
+              by = c("ident21" = "ident"))
+  
+  # Calculs avec pondération:
+  TFPB_statut_com_UU_p <- dt_merged_REI_loc_t %>%
+    mutate(poi2=2*poi) %>%
+    group_by(STATUT_COM_UU) %>%
+    summarise(Nb_menages = sum(poi2,na.rm = T),
+              TFPB_tot = sum(get(var_montant_TF)*poi2,na.rm = T)
+    ) %>%
+    mutate(TFPB_moy = TFPB_tot/Nb_menages) %>%
+    mutate(Nb_menages2 = Nb_menages/1e6, #en millions de ménages
+           TFPB_tot2 = TFPB_tot/1e9 #en milliard d'euros
+    ) %>%
+    select(STATUT_COM_UU,Nb_menages2,TFPB_tot2,TFPB_moy) %>%
+    rename(Nb_menages=Nb_menages2,TFPB_tot=TFPB_tot2
+    )
+  
+  
+  return(TFPB_statut_com_UU_p)
 }
 
 

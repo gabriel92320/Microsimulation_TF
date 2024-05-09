@@ -79,7 +79,12 @@ Importer_et_merge_REI_carac_tf <- function(liste_cols_REI_loc, annee_loc = 2021)
   # Puis Merge merged et REI
   dt_merged_REI_loc <- merge(carac_tf, SOUS_REI, by.x = c("ccodep", "ccocom_REI"), by.y = c("DEPARTEMENT", "COMMUNE"), all.x = TRUE)
   
+  # Merge avec le fichier Insee sur les types d'unité urbaine
+  TUU_2020 <- data.table(readxl::read_excel(path = paste(repo_data, "/UU2020_au_01-01-2024.xlsx", sep = ""), sheet = "Composition_communale",skip=5))
   
+  dt_merged_REI_loc[,CODGEO := paste0(ccodep,ccocom_REI)]
+  
+  dt_merged_REI_loc <- merge(dt_merged_REI_loc, TUU_2020, by.x = "CODGEO", by.y = "CODGEO", all.x = TRUE)
   
   return(dt_merged_REI_loc)
 }
