@@ -26,6 +26,8 @@ mettre_titres_graphiques <- TRUE # Pour sauvegarder les graphes SANS leur titre 
 source(paste(repo_prgm , "01_packages.R" , sep = "/"))
 source(paste(repo_prgm , "02_Importations_preparation.R" , sep = "/"))
 source(paste(repo_prgm , "03_Calcul_taux_TF.R" , sep = "/"))
+source(paste(repo_prgm , "04_Preparation_graphiques.R" , sep = "/"))
+source(paste(repo_prgm , "05_Graphiques.R" , sep = "/"))
 
 ################################################################################
 # ================= 02 = PREPARATION DES DT  ===================================
@@ -72,8 +74,9 @@ dt_merged_REI <- Importer_et_merge_REI_carac_tf(liste_cols_REI_loc)
 dt_merged_REI_loc <- copy(dt_merged_REI)
 dt_merged_REI <- Calculer_taux_brut(dt_merged_REI_loc)
   
-# On importe aussi carac_men
+# On importe aussi carac_men et caract_tf
 carac_men <- data.table(readRDS(paste(repo_data, "carac_men.rds", sep = "/")))
+carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
 
 # On calcule la TF nette par logement
 carac_men_loc <- copy(carac_men)
@@ -82,50 +85,39 @@ annee_loc <- annee
 dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc, annee_loc)
   
 
-################################################################################
-################### BROUILLON BENJAMIN ######################################### 
-################################################################################
-########### GRAPHIQUES
-
+# On stocke tous les chemins des pdf générés, pour pouvoir les fusionner à la fin et obtenir un joli cahier graphique
 liste_chemins_graphes <- c()
 
-# Taux moyen de TFPB brute par décile de niveau de vie en 2021:
-TFPB_brute_menages <- dt_merged_REI[, .(TFPB_brute = sum(Montant_TF_BRUT,na.rm = T)), by = 'ident21']
 
-# Merge avec ménage pour récup les caractéristiques
-TFPB_brute_menages$ident21 <- as.factor(TFPB_brute_menages$ident21)
-carac_men$ident <- as.factor(carac_men$ident)
-TFPB_brute_menages_tb <- merge(carac_men, TFPB_brute_menages, by.x = "ident", by.y = "ident21")
 
-TFPB_brute_menages_tb <- TFPB_brute_menages_tb %>%
-  filter(!(is.na(decile_ndv))) %>%
-  mutate(decile_ndv = factor(decile_ndv)) %>%
-  mutate(decile_ndv=fct_recode(decile_ndv,"D1"="1","D2"="2","D3"="3","D4"="4",
-                               "D5"="5","D6"="6","D7"="7","D8"="8","D9"="9",
-                               "D10"="10"))
 
-# Calculs avec pondération:
-TFPB_brute_decile_ndv_p <- TFPB_brute_menages_tb %>%
-  mutate(poi2=2*poi) %>%
-  group_by(decile_ndv) %>%
-  summarise(Nb_menages = sum(poi2,na.rm = T),
-            TFPB_brute_tot = sum(TFPB_brute*poi2,na.rm = T)
-  ) %>%
-  mutate(TFPB_brute_moy = TFPB_brute_tot/Nb_menages) %>%
-  mutate(Nb_menages2 = Nb_menages/1e6, #en millions de ménages
-         TFPB_brute_tot2 = TFPB_brute_tot/1e9 #en milliard d'euros
-  ) %>%
-  select(decile_ndv,Nb_menages2,TFPB_brute_tot2,TFPB_brute_moy) %>%
-  rename(Nb_menages=Nb_menages2,TFPB_brute_tot=TFPB_brute_tot2
-  )
+################################ GRAPHIQUES ####################################
 
-# Graphique 1:
-#TFPB_brute totale (en Md euros) par décile de niveau de vie des ménages en 2021
-titre_save <- paste("Montant_tot_TFPB_", annee, ".pdf", sep = "")
+
+# On commence par préparer le dt nécessaire à tracer le graphe
+dt_merged_REI_loc <- copy(dt_merged_REI)
+var_montant_TF <- "Montant_TF_NETTE_proratise"
+TFPB_nette_decile_ndv_p <- Calcul_montant_tot_moy_TFPB_nivviem(dt_merged_REI_loc, var_montant_TF)
+
+
+####### PARTIE 1 : MONTANT TOTAL DE LA TF NETTE
+#TFPB nette totale (en Md euros) par décile de niveau de vie des ménages en 2021
+
+# On prépare tous les arguments 
+data_loc <- copy(TFPB_nette_decile_ndv_p)
+x <- "decile_ndv"
+y <- "TFPB_tot"
+xlabel <- "Déciles de niveau de vie"
+ylabel <- "TFPB"
+ysuffix <- "M€"
+
+# L'adresse de sauvegarde du graphique
+titre_save <- paste("Montant_tot_TFPB_", annee, ".pdf", sep = "") 
 titre_save <- paste(repo_sorties, titre_save, sep ='/')
 liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
 
-titre_graphe <- "Montant total de TFPB brute en 2021"
+# Titres et sous-titres
+titre_graphe <- "Montant total de TFPB nette en 2021"
 sous_titre_graphe <- "Distribution selon le niveau de vie des ménages propriétaires"
 
 # Pour virer le titre si on le souhaite
@@ -134,38 +126,186 @@ if(!mettre_titres_graphiques){
   sous_titre_graphe <- ""
 }
 
-graph1 <- ggplot(TFPB_brute_decile_ndv_p) +
-  aes(x = decile_ndv, y = TFPB_brute_tot) +
+# On appelle la fonction
+Faire_graphique_barplot(data_loc, x, y,xlabel, ylabel, ysuffix, titre_save, titre_graphe, sous_titre_graphe)
+
+
+####### PARTIE 2 : MONTANT MOYEN DE LA TF NETTE
+#TFPB nette moyenne (en Md euros) par décile de niveau de vie des ménages en 2021
+
+# On prépare tous les arguments 
+data_loc <- copy(TFPB_nette_decile_ndv_p)
+x <- "decile_ndv"
+y <- "TFPB_moy"
+xlabel <- "Déciles de niveau de vie"
+ylabel <- "TFPB"
+ysuffix <- "€"
+
+# L'adresse de sauvegarde du graphique
+titre_save <- paste("Montant_moy_TFPB_", annee, ".pdf", sep = "") 
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
+
+# Titres et sous-titres
+titre_graphe <- "Montant moyen de TFPB nette en 2021"
+sous_titre_graphe <- "Distribution selon le niveau de vie des ménages propriétaires"
+
+# Pour virer le titre si on le souhaite
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
+
+# On appelle la fonction
+Faire_graphique_barplot(data_loc, x, y,xlabel, ylabel, ysuffix, titre_save, titre_graphe, sous_titre_graphe)
+
+
+
+####### PARTIE 3 : ASSIETTE ET TAUX APPARENTS
+
+# On récupère assiettes et tx apparents par ménage
+var_montant_TF <- "Montant_TF_NETTE_proratise"
+dt_merged_REI_loc <- copy(dt_merged_REI)
+TFPB_menages_tb <- Calcul_assiette_tx_apparent_TFPB(dt_merged_REI_loc, var_montant_TF)
+
+
+# Calcul du taux moyen apparent par décile niveau de vie:
+tx_moyen_apparent_decile_ndv <- TFPB_menages_tb %>%
+  group_by(decile_ndv) %>%
+  summarise(TFPB=sum(TFPB*poi2,na.rm = T),
+            assiette_TFPB = sum(assiette_TFPB*poi2,na.rm = T)) %>%
+  mutate(tx_apparent_moy_TFPB_b=TFPB/assiette_TFPB*100) %>%
+  mutate(assiette_TFPB_mde=assiette_TFPB/1e9)
+
+tx_moyen_apparent_decile_ndv <- tx_moyen_apparent_decile_ndv %>%
+  filter(!(is.na(decile_ndv))) %>%
+  mutate(decile_ndv = factor(decile_ndv)) %>%
+  mutate(decile_ndv=fct_recode(decile_ndv,"D1"="1","D2"="2","D3"="3","D4"="4",
+                               "D5"="5","D6"="6","D7"="7","D8"="8","D9"="9",
+                               "D10"="10"))
+
+#### Puis graphique :
+# On prépare tous les arguments 
+data_loc <- copy(tx_moyen_apparent_decile_ndv)
+x <- "decile_ndv"
+y <- "tx_apparent_moy_TFPB_b"
+xlabel <- "Déciles de niveau de vie"
+ylabel <- "Taux moyen apparent"
+ysuffix <- "%"
+
+# L'adresse de sauvegarde du graphique
+titre_save <- paste("Moyenne_tx_apparents_TFPB_", annee, ".pdf", sep = "") 
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
+
+# Titres et sous-titres
+titre_graphe <- "Moyenne des taux apparents de TFPB nette en 2021"
+sous_titre_graphe <- "Distribution selon le niveau de vie des ménages propriétaires"
+
+# Pour virer le titre si on le souhaite
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
+
+# On appelle la fonction
+Faire_graphique_barplot(data_loc, x, y,xlabel, ylabel, ysuffix, titre_save, titre_graphe, sous_titre_graphe)
+
+
+#### Puis graphique de l'assiette
+# On prépare tous les arguments 
+data_loc <- copy(tx_moyen_apparent_decile_ndv)
+x <- "decile_ndv"
+y <- "assiette_TFPB_mde"
+xlabel <- "Déciles de niveau de vie"
+ylabel <- "Assiette"
+ysuffix <- "M€"
+
+# L'adresse de sauvegarde du graphique
+titre_save <- paste("Assiette_TFPB_", annee, ".pdf", sep = "") 
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
+
+# Titres et sous-titres
+titre_graphe <- "Assiette de la TFPB nette en 2021"
+sous_titre_graphe <- "Distribution par décile de niveau de vie"
+
+# Pour virer le titre si on le souhaite
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
+
+# On appelle la fonction
+Faire_graphique_barplot(data_loc, x, y,xlabel, ylabel, ysuffix, titre_save, titre_graphe, sous_titre_graphe)
+
+
+
+
+
+################################################################################
+########## FUSION CAHIER GRAPHIQUE #############################################
+################################################################################
+# A garder à la fin du script : récupère tous les graphiques pdf générés et les fusionne dans le dossier racine du projet
+
+titre_save <- paste("cahier_graphique_",annee,".pdf", sep = "")
+titre_save <- paste(repgen, titre_save, sep ='/')
+pdf_combine(liste_chemins_graphes, output = titre_save)
+
+################################################################################
+################### BROUILLON BENJAMIN ######################################### 
+################################################################################
+
+
+
+
+
+
+
+
+
+
+
+# Visualisation du taux moyen apparent de TFPB brute en 2021 par décile de
+# niveau de vie des ménages:
+graph4 <- ggplot(tx_moyen_apparent_decile_ndv) +
+  aes(x = decile_ndv, y = tx_apparent_moy_TFPB_b) +
   geom_col(fill = "#112446") +
   labs(
     x = "Déciles de niveau de vie",
-    y = "TFPB",
-    title = titre_graphe,
-    subtitle = sous_titre_graphe
+    y = "Taux moyen apparent",
+    title = "Taux moyen apparent de TFPB brute en 2021",
+    subtitle = "Distribution par décile de niveau de vie des ménages"
   ) +
-  scale_y_continuous(labels = scales::dollar_format(
-    prefix = "",
-    suffix = "M€",
-    big.mark = " ",
-    decimal.mark = ",")) +
   theme_minimal() +
-    theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
-          text = element_text(size = 20),  # Changer la taille de la police générale
-          axis.title = element_text(size = 20),  # Changer la taille de la police des titres d'axe
-          axis.text = element_text(size = 20),  # Changer la taille de la police des étiquettes d'axe
-          plot.title = element_text(size = 20, face = "bold", hjust = 0.5),  # Changer la taille de la police du titre du graphique
-          legend.text = element_text(size = 20),
-          plot.subtitle = element_text(hjust = 0.5),
-          legend.position="bottom") 
-# theme(
-# plot.title = element_text(face = "bold",
-#                           hjust = 0.5),
-# plot.subtitle = element_text(hjust = 0.5) +
-  # )
+  theme(
+    plot.title = element_text(face = "bold",
+                              hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
 
 
-print(graph1)
-ggsave(titre_save, graph1 ,  width = 297, height = 210, units = "mm")
+
+# Visualisation du montant total d'assiette de TFPB brute 2021
+# par décile de niveau de vie des ménages
+graph5 <- ggplot(tx_moyen_apparent_decile_ndv) +
+  aes(x = decile_ndv, y = assiette_TFPB_mde) +
+  geom_col(fill = "#112446") +
+  labs(
+    x = "Déciles de niveau de vie",
+    y = "Assiette (en milliard d'euros)",
+    title = "Assiette de la TFPB brute en 2021",
+    subtitle = "Distribution par décile de niveau de vie"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(face = "bold",
+                              hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5)
+  )
+
+
+
 
 
 #######################
@@ -176,9 +316,6 @@ nrow(dt_merged_REI[is.na(jandeb)])
 carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
 nrow(carac_tf[is.na(jandeb)])
 
-
-
-# dvldif2a janbil jandeb janimp pexb_C pexb_TS pexb_GC pexb_OM
 
 
 
