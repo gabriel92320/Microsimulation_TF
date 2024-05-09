@@ -2,6 +2,21 @@
 ########### FICHIER MAIN POUR LA MICROSIMULATION DE LA TF ######################
 ################################################################################
 
+## A faire ##
+
+# Ajouter le tx départemental dans le calcul de la TF en 2020
+# Piste de qq graphiques : regarder l'évolution 2020, 2021 et 2022 
+# ==> Toutes les fonctions d'importations ont été adaptée pour 2020, 2021 et 2022. Il suffit de mettre REI_XXXX dans le dossier data et de faire tourner la ligne "A DECOMMENTER"
+
+# Regarder l'effet "évolution des taux 21-22" sous d'autres angles: classe d'âge, par région, par type d'unité urbaine ?
+
+# Récupérer les zonages TUU 2020 et les apparier à la base "logements"
+# Coder une variable catégorielle de classe d'âge
+
+# Implémentation des exonérations de TFPB:
+# Distinguer exonération totale/exonération partielle
+
+
 ################################################################################
 # =========== 00 = REGLAGES ET PARAMETRES ======================================
 ################################################################################
@@ -16,7 +31,7 @@ repo_data <- paste(repgen, "Data" , sep = "/")
 repo_bases_intermediaires <- paste(repgen, "Bases_intermediaires" , sep = "/")
 
 # Ici quelques paramètres généraux
-annee <- 2021 # Utilisé pour les exonérations : on regarde si l'année est avant ou après l'année de fin d'exonération post-construction
+annee <- 2021 # Pour 2020 il y a le tx départemental en plus
 
 mettre_titres_graphiques <- TRUE # Pour sauvegarder les graphes SANS leur titre (pour pouvoir mettre le titre en caption latex)
 
@@ -33,11 +48,11 @@ source(paste(repo_prgm , "05_Graphiques.R" , sep = "/"))
 # ================= 02 = PREPARATION DES DT  ===================================
 ################################################################################
 
-liste_cols_REI <- c("DEPARTEMENT",
+liste_cols_REI_loc <- c("DEPARTEMENT",
                     "DIRECTION",
                     "COMMUNE",
                     "Numéro.national.du.groupement",
-                    "NUMERO.SIREN.DE.L'EPCI",
+                    # "NUMERO.SIREN.DE.L'EPCI",
                     "Libellé.du.Groupement",
                     "option.fiscale.de.l'EPCI.(FPA,.FPU.ou.FPZ)",
                     "Forme.juridique.EPCI.(CA,.CU,.CC,.SAN.ou.Mét)",
@@ -56,7 +71,10 @@ liste_cols_REI <- c("DEPARTEMENT",
                     "FB.-.TSE./.BASE.NETTE",
                     "FB.-.TSE./.TAUX.NET")
 
-# Faire_dt_SOUS_REI(liste_cols_REI_loc) # A DECOMMENTER LA PREMIERE FOIS : Importe le REI, ne sélectionne que les colonnes de liste_cols_REI_loc et sauvegarde
+
+
+annee_loc <- annee
+# Faire_dt_SOUS_REI(liste_cols_REI_loc, annee_loc) # A DECOMMENTER LA PREMIERE FOIS : Importe le REI, ne sélectionne que les colonnes de liste_cols_REI_loc et sauvegarde
 
 liste_cols_REI_loc <- c("DEPARTEMENT",
                        "COMMUNE",
@@ -66,6 +84,9 @@ liste_cols_REI_loc <- c("DEPARTEMENT",
                        "FB.-.GFP./.TAUX.APPLICABLE.SUR.LE.TERRITOIRE.DE.LA.COMMUNE", # Le tx pour montant net
                        "Libellé.commune")
 
+if(annee == 2020){ # En 2020 il faut ajouter le tx du dpt
+  liste_cols_REI_loc <- append(liste_cols_REI_loc, "FB.-.DEP./.TAUX.NET")
+}
 
 # On merge REI et carac_tf, on est donc à l'échelle du LOGEMENT
 dt_merged_REI <- Importer_et_merge_REI_carac_tf(liste_cols_REI_loc)
