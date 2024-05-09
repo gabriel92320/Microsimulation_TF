@@ -18,6 +18,7 @@ repo_bases_intermediaires <- paste(repgen, "Bases_intermediaires" , sep = "/")
 # Ici quelques paramètres généraux
 annee <- 2021 # Utilisé pour les exonérations : on regarde si l'année est avant ou après l'année de fin d'exonération post-construction
 
+mettre_titres_graphiques <- TRUE # Pour sauvegarder les graphes SANS leur titre (pour pouvoir mettre le titre en caption latex)
 
 ################################################################################
 # =========== 01 = PACKAGES ET SCRIPTS DE FONCTIONS  ===========================
@@ -84,6 +85,92 @@ dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc, annee_loc)
 ################################################################################
 ################### BROUILLON BENJAMIN ######################################### 
 ################################################################################
+########### GRAPHIQUES
+
+liste_chemins_graphes <- c()
+
+# Taux moyen de TFPB brute par décile de niveau de vie en 2021:
+TFPB_brute_menages <- dt_merged_REI[, .(TFPB_brute = sum(Montant_TF_BRUT,na.rm = T)), by = 'ident21']
+
+# Merge avec ménage pour récup les caractéristiques
+TFPB_brute_menages$ident21 <- as.factor(TFPB_brute_menages$ident21)
+carac_men$ident <- as.factor(carac_men$ident)
+TFPB_brute_menages_tb <- merge(carac_men, TFPB_brute_menages, by.x = "ident", by.y = "ident21")
+
+TFPB_brute_menages_tb <- TFPB_brute_menages_tb %>%
+  filter(!(is.na(decile_ndv))) %>%
+  mutate(decile_ndv = factor(decile_ndv)) %>%
+  mutate(decile_ndv=fct_recode(decile_ndv,"D1"="1","D2"="2","D3"="3","D4"="4",
+                               "D5"="5","D6"="6","D7"="7","D8"="8","D9"="9",
+                               "D10"="10"))
+
+# Calculs avec pondération:
+TFPB_brute_decile_ndv_p <- TFPB_brute_menages_tb %>%
+  mutate(poi2=2*poi) %>%
+  group_by(decile_ndv) %>%
+  summarise(Nb_menages = sum(poi2,na.rm = T),
+            TFPB_brute_tot = sum(TFPB_brute*poi2,na.rm = T)
+  ) %>%
+  mutate(TFPB_brute_moy = TFPB_brute_tot/Nb_menages) %>%
+  mutate(Nb_menages2 = Nb_menages/1e6, #en millions de ménages
+         TFPB_brute_tot2 = TFPB_brute_tot/1e9 #en milliard d'euros
+  ) %>%
+  select(decile_ndv,Nb_menages2,TFPB_brute_tot2,TFPB_brute_moy) %>%
+  rename(Nb_menages=Nb_menages2,TFPB_brute_tot=TFPB_brute_tot2
+  )
+
+# Graphique 1:
+#TFPB_brute totale (en Md euros) par décile de niveau de vie des ménages en 2021
+titre_save <- paste("Montant_tot_TFPB_", annee, ".pdf", sep = "")
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
+
+titre_graphe <- "Montant total de TFPB brute en 2021"
+sous_titre_graphe <- "Distribution selon le niveau de vie des ménages propriétaires"
+
+# Pour virer le titre si on le souhaite
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
+
+graph1 <- ggplot(TFPB_brute_decile_ndv_p) +
+  aes(x = decile_ndv, y = TFPB_brute_tot) +
+  geom_col(fill = "#112446") +
+  labs(
+    x = "Déciles de niveau de vie",
+    y = "TFPB",
+    title = titre_graphe,
+    subtitle = sous_titre_graphe
+  ) +
+  scale_y_continuous(labels = scales::dollar_format(
+    prefix = "",
+    suffix = "M€",
+    big.mark = " ",
+    decimal.mark = ",")) +
+  theme_minimal() +
+    theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
+          text = element_text(size = 20),  # Changer la taille de la police générale
+          axis.title = element_text(size = 20),  # Changer la taille de la police des titres d'axe
+          axis.text = element_text(size = 20),  # Changer la taille de la police des étiquettes d'axe
+          plot.title = element_text(size = 20, face = "bold", hjust = 0.5),  # Changer la taille de la police du titre du graphique
+          legend.text = element_text(size = 20),
+          plot.subtitle = element_text(hjust = 0.5),
+          legend.position="bottom") 
+# theme(
+# plot.title = element_text(face = "bold",
+#                           hjust = 0.5),
+# plot.subtitle = element_text(hjust = 0.5) +
+  # )
+
+
+print(graph1)
+ggsave(titre_save, graph1 ,  width = 297, height = 210, units = "mm")
+
+
+#######################
+
+
 nrow(dt_merged_REI[is.na(jandeb)])
 
 carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
