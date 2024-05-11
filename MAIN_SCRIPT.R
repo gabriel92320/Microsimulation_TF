@@ -21,8 +21,8 @@
 # =========== 00 = REGLAGES ET PARAMETRES ======================================
 ################################################################################
 
-#repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
- repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
+repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
+ # repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
 
 
 repo_prgm <- paste(repgen, "MicrosimulationTF" , sep = "/")

@@ -24,7 +24,7 @@ Importer_et_merge_REI_carac_tf <- function(liste_cols_REI_loc, annee_loc = 2021)
   # ATTENTION SI ON AJOUTE DES COLONNES IL VA FALLOIR SANS DOUTE AJOUTER DES SETNAMES
   
   # Importer le REI et sélectionner les colonnes
-  load(paste(repo_bases_intermediaires, "/REI_",annee_loc,"SELECT.RData", sep = ""))
+  load(paste(repo_bases_intermediaires, "/REI_",annee_loc,"_SELECT.RData", sep = ""))
   SOUS_REI <- SOUS_REI[,..liste_cols_REI_loc]
   
   # Faire quelques setnames pour éviter les problèmes
