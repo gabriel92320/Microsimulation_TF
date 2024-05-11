@@ -44,9 +44,9 @@ Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc, annee_loc = 2021
   
   #### Les propriétaires exonérés ou dégrévés sur critères sociaux
   liste_ident_exonerees_res_princ <- carac_men_loc[(aspa == '1') |
-                                                     # (age_pr >= 75 & rfr < 11885) |
+                                                     (age_pr >= 75 & rfr < 11885) |
                                                      (aah == "1" & rfr < 11885), ]$ident
-  liste_ident_exonerees_toutes_res <- carac_men_loc[(age_pr >= 75 & rfr < 11885), ]$ident
+  # liste_ident_exonerees_toutes_res <- carac_men_loc[(age_pr >= 75 & rfr < 11885), ]$ident
   liste_ident_degreves_res_princ <- carac_men_loc[age_pr >= 65 & rfr < 11885 & age_pr < 75, ]$ident
   
   
