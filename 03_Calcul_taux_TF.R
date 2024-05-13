@@ -115,3 +115,18 @@ Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc, annee_loc = 2021
 
   return(dt_merged_REI_loc)
 }
+
+
+
+
+# Calcul des quantiles pondérés
+weighted_quantiles <- function(x, weights, probs) {
+  sort_x <- sort(x)
+  cumulative_weights <- cumsum(weights[order(x)])
+  quantiles <- sapply(probs, function(p) {
+    idx <- which.max(cumulative_weights >= p * sum(weights))
+    sort_x[min(idx, length(x))]
+  })
+  return(quantiles)
+}
+

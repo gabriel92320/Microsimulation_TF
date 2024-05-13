@@ -36,6 +36,9 @@ toutes_annees <- TRUE # Pour calculer les montants sur les 3 années 2020, 2021 
 
 mettre_titres_graphiques <- TRUE # Pour sauvegarder les graphes SANS leur titre (pour pouvoir mettre le titre en caption latex)
 utiliser_dvldif2a <- TRUE # Pour utiliser la variable dvldif2a = Montant de VL exonérée (valeur de l’année) pour le calcul TF net ==> Ne change pas grand chose, mais je pense que c'est plus propre parce que déjà contenu dans la base
+
+nb_quantiles <- 20 # Pour tracer la TF en fnt des quantiles de RFR,
+
 ################################################################################
 # =========== 01 = PACKAGES ET SCRIPTS DE FONCTIONS  ===========================
 ################################################################################
@@ -276,16 +279,6 @@ Faire_graphique_barplot(data_loc, x, y,xlabel, ylabel, ysuffix, titre_save, titr
 
 
 ################################################################################
-########## FUSION CAHIER GRAPHIQUE #############################################
-################################################################################
-# A garder à la fin du script : récupère tous les graphiques pdf générés et les fusionne dans le dossier racine du projet
-
-titre_save <- paste("cahier_graphique_",annee,".pdf", sep = "")
-titre_save <- paste(repgen, titre_save, sep ='/')
-pdf_combine(liste_chemins_graphes, output = titre_save)
-
-
-################################################################################
 # ================= PREPARATION DES DT sur 3 ans ===============================
 ################################################################################
 liste_cols_REI_loc <- c("DEPARTEMENT",
@@ -314,6 +307,7 @@ dt_merged_REI <- Importer_et_merge_REI_carac_tf(liste_cols_REI_loc, annee_loc)
 dt_merged_REI <- Calculer_taux_brut(copy(dt_merged_REI), annee_loc)
 dt_merged_REI <- Calculer_taux_net(copy(dt_merged_REI), copy(carac_men), annee_loc, utiliser_dvldif2a)
 dt_merged_REI_2021 <- copy(dt_merged_REI)
+dt_merged_REI_2021$Montant_DEP_TF <- 0 # Pour pouvoir comparer à 2020
 
 # Importation 2022
 annee_loc <- 2022
@@ -321,10 +315,12 @@ dt_merged_REI <- Importer_et_merge_REI_carac_tf(liste_cols_REI_loc, annee_loc)
 dt_merged_REI <- Calculer_taux_brut(copy(dt_merged_REI), annee_loc)
 dt_merged_REI <- Calculer_taux_net(copy(dt_merged_REI), copy(carac_men), annee_loc, utiliser_dvldif2a)
 dt_merged_REI_2022 <- copy(dt_merged_REI)
+dt_merged_REI_2022$Montant_DEP_TF <- 0 # Pour pouvoir comparer à 2020
+
 
 
 # La liste des colonnes qu'on veut indicer par l'année et conserver
-liste_cols_annee <- c("FB_COMMUNE_TAUX_NET", "FN_GFP_TAUX_APPLICABLE_SUR_LE_TERRITOIRE_DE_LA_COMMUNE", "Montant_TF_BRUT_proratise", "Montant_TF_NETTE_proratise")
+liste_cols_annee <- c("FB_COMMUNE_TAUX_NET", "FN_GFP_TAUX_APPLICABLE_SUR_LE_TERRITOIRE_DE_LA_COMMUNE", "Montant_TF_BRUT_proratise", "Montant_TF_NETTE_proratise", "Montant_DEP_TF")
 # La liste des colonnes qu'on ne va pas bouger
 liste_cols_immobiles <- colnames(carac_tf)
 liste_cols_immobiles_2 <- c("LIBGEO","UU2020","LIBUU2020","TYPE_COMMUNE_UU","STATUT_COM_UU")
@@ -349,7 +345,416 @@ for(var in liste_cols_annee){
 }
 
 
+
 dt_merged_REI_suivi # Le dt avec 3 années
+
+
+
+################################################################################
+# ===================== GRAPHIQUES SUR 3 ANS  ==================================
+################################################################################
+
+
+# Les 3 tables sur 3 années
+dt_merged_REI_loc <- copy(dt_merged_REI_suivi)
+var_montant_TF <- "Montant_TF_NETTE_proratise_2020"
+TFPB_nette_decile_ndv_p_20 <- data.table(Calcul_montant_tot_moy_TFPB_nivviem(dt_merged_REI_loc, var_montant_TF))
+TFPB_nette_decile_ndv_p_20$annee <- 2020
+
+var_montant_TF <- "Montant_TF_NETTE_proratise_2021"
+TFPB_nette_decile_ndv_p_21 <- data.table(Calcul_montant_tot_moy_TFPB_nivviem(dt_merged_REI_loc, var_montant_TF))
+TFPB_nette_decile_ndv_p_21$annee <- 2021
+
+var_montant_TF <- "Montant_TF_NETTE_proratise_2022"
+TFPB_nette_decile_ndv_p_22 <- data.table(Calcul_montant_tot_moy_TFPB_nivviem(dt_merged_REI_loc, var_montant_TF))
+TFPB_nette_decile_ndv_p_22$annee <- 2022
+
+# rbind pour obtenir 1 table concaténée
+TFPB_nette_decile_ndv_p <- rbindlist(list(TFPB_nette_decile_ndv_p_20, TFPB_nette_decile_ndv_p_21, TFPB_nette_decile_ndv_p_22))
+TFPB_nette_decile_ndv_p$annee <- as.factor(TFPB_nette_decile_ndv_p$annee)
+
+
+
+####### PARTIE 1 : MONTANT TOTAL DE LA TF NETTE
+#TFPB nette totale (en Md euros) par décile de niveau de vie des ménages en 2021
+data_loc <- copy(TFPB_nette_decile_ndv_p)
+x <- "decile_ndv"
+y <- "TFPB_tot"
+fill <- "annee"
+xlabel <- "Déciles de niveau de vie"
+ylabel <- "TFPB"
+ysuffix <- "M€"
+filllabel <- "Année"
+
+titre_save <- paste("Montant_tot_TFPB_Toutes_annees", ".pdf", sep = "") 
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
+
+titre_graphe <- "Montant total de TFPB nette"
+sous_titre_graphe <- "Distribution selon le niveau de vie des ménages propriétaires"
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
+
+Faire_graphique_barplot_avec_fill(data_loc, x, y, fill, xlabel, ylabel, filllabel, ysuffix = "M€", titre_save, titre_graphe, sous_titre_graphe)
+
+
+
+####### PARTIE 2 : MONTANT MOYEN DE LA TF NETTE
+#TFPB nette moyenne (en Md euros) par décile de niveau de vie des ménages en 2021
+
+# On prépare tous les arguments 
+y <- "TFPB_moy"
+ysuffix <- "€"
+
+titre_save <- paste("Montant_moy_TFPB_Toutes_annees", ".pdf", sep = "") 
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
+
+titre_graphe <- "Montant moyen de TFPB nette"
+sous_titre_graphe <- "Distribution selon le niveau de vie des ménages propriétaires"
+
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
+
+Faire_graphique_barplot_avec_fill(data_loc, x, y, fill, xlabel, ylabel, filllabel, ysuffix, titre_save, titre_graphe, sous_titre_graphe)
+
+
+
+
+####### PARTIE 3 : ASSIETTE ET TAUX APPARENTS
+# On récupère assiettes et tx apparents par ménage
+var_montant_TF <- "Montant_TF_NETTE_proratise_2020"
+TFPB_menages_tb <- Calcul_assiette_tx_apparent_TFPB(copy(dt_merged_REI_suivi), var_montant_TF)
+tx_moyen_apparent_decile_ndv <- TFPB_menages_tb %>%
+  group_by(decile_ndv) %>%
+  summarise(TFPB=sum(TFPB*poi2,na.rm = T),
+            assiette_TFPB = sum(assiette_TFPB*poi2,na.rm = T)) %>%
+  mutate(tx_apparent_moy_TFPB_b=TFPB/assiette_TFPB*100) %>%
+  mutate(assiette_TFPB_mde=assiette_TFPB/1e9)
+
+tx_moyen_apparent_decile_ndv <- tx_moyen_apparent_decile_ndv %>%
+  filter(!(is.na(decile_ndv))) %>%
+  mutate(decile_ndv = factor(decile_ndv)) %>%
+  mutate(decile_ndv=fct_recode(decile_ndv,"D1"="1","D2"="2","D3"="3","D4"="4",
+                               "D5"="5","D6"="6","D7"="7","D8"="8","D9"="9",
+                               "D10"="10"))
+tx_moyen_apparent_decile_ndv_2020 <- data.table(tx_moyen_apparent_decile_ndv)
+tx_moyen_apparent_decile_ndv_2020$annee <- 2020
+
+
+
+var_montant_TF <- "Montant_TF_NETTE_proratise_2021"
+TFPB_menages_tb <- Calcul_assiette_tx_apparent_TFPB(copy(dt_merged_REI_suivi), var_montant_TF)
+tx_moyen_apparent_decile_ndv <- TFPB_menages_tb %>%
+  group_by(decile_ndv) %>%
+  summarise(TFPB=sum(TFPB*poi2,na.rm = T),
+            assiette_TFPB = sum(assiette_TFPB*poi2,na.rm = T)) %>%
+  mutate(tx_apparent_moy_TFPB_b=TFPB/assiette_TFPB*100) %>%
+  mutate(assiette_TFPB_mde=assiette_TFPB/1e9)
+
+tx_moyen_apparent_decile_ndv <- tx_moyen_apparent_decile_ndv %>%
+  filter(!(is.na(decile_ndv))) %>%
+  mutate(decile_ndv = factor(decile_ndv)) %>%
+  mutate(decile_ndv=fct_recode(decile_ndv,"D1"="1","D2"="2","D3"="3","D4"="4",
+                               "D5"="5","D6"="6","D7"="7","D8"="8","D9"="9",
+                               "D10"="10"))
+tx_moyen_apparent_decile_ndv_2021 <- data.table(tx_moyen_apparent_decile_ndv)
+tx_moyen_apparent_decile_ndv_2021$annee <- 2021
+
+
+
+
+var_montant_TF <- "Montant_TF_NETTE_proratise_2022"
+TFPB_menages_tb <- Calcul_assiette_tx_apparent_TFPB(copy(dt_merged_REI_suivi), var_montant_TF)
+tx_moyen_apparent_decile_ndv <- TFPB_menages_tb %>%
+  group_by(decile_ndv) %>%
+  summarise(TFPB=sum(TFPB*poi2,na.rm = T),
+            assiette_TFPB = sum(assiette_TFPB*poi2,na.rm = T)) %>%
+  mutate(tx_apparent_moy_TFPB_b=TFPB/assiette_TFPB*100) %>%
+  mutate(assiette_TFPB_mde=assiette_TFPB/1e9)
+
+tx_moyen_apparent_decile_ndv <- tx_moyen_apparent_decile_ndv %>%
+  filter(!(is.na(decile_ndv))) %>%
+  mutate(decile_ndv = factor(decile_ndv)) %>%
+  mutate(decile_ndv=fct_recode(decile_ndv,"D1"="1","D2"="2","D3"="3","D4"="4",
+                               "D5"="5","D6"="6","D7"="7","D8"="8","D9"="9",
+                               "D10"="10"))
+tx_moyen_apparent_decile_ndv_2022 <- data.table(tx_moyen_apparent_decile_ndv)
+tx_moyen_apparent_decile_ndv_2022$annee <- 2022
+
+
+
+
+tx_moyen_apparent_decile_ndv <- rbindlist(list(tx_moyen_apparent_decile_ndv_2020, tx_moyen_apparent_decile_ndv_2021, tx_moyen_apparent_decile_ndv_2022))
+tx_moyen_apparent_decile_ndv$annee <- as.factor(tx_moyen_apparent_decile_ndv$annee)
+
+
+#### Puis graphique :
+# On prépare tous les arguments 
+data_loc <- copy(tx_moyen_apparent_decile_ndv)
+x <- "decile_ndv"
+y <- "tx_apparent_moy_TFPB_b"
+fill <- 'annee'
+xlabel <- "Déciles de niveau de vie"
+ylabel <- "Taux moyen apparent"
+ysuffix <- "%"
+filllabel <- "Année"
+
+# L'adresse de sauvegarde du graphique
+titre_save <- paste("Moyenne_tx_apparents_TFPB_Toutes_annees", ".pdf", sep = "") 
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
+
+# Titres et sous-titres
+titre_graphe <- "Moyenne des taux apparents de TFPB nette"
+sous_titre_graphe <- "Distribution selon le niveau de vie des ménages propriétaires"
+
+# Pour virer le titre si on le souhaite
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
+
+# On appelle la fonction
+Faire_graphique_barplot_avec_fill(data_loc, x, y, fill, xlabel, ylabel, filllabel, ysuffix, titre_save, titre_graphe, sous_titre_graphe)
+
+
+#### Puis graphique de l'assiette
+# On prépare tous les arguments 
+y <- "assiette_TFPB_mde"
+ylabel <- "Assiette"
+ysuffix <- "M€"
+
+# L'adresse de sauvegarde du graphique
+titre_save <- paste("Assiette_TFPB_Toutes_annees", ".pdf", sep = "") 
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
+
+# Titres et sous-titres
+titre_graphe <- "Assiette de la TFPB nette"
+sous_titre_graphe <- "Distribution par décile de niveau de vie"
+
+# Pour virer le titre si on le souhaite
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
+
+# On appelle la fonction
+Faire_graphique_barplot_avec_fill(data_loc, x, y, fill, xlabel, ylabel, filllabel, ysuffix, titre_save, titre_graphe, sous_titre_graphe)
+
+
+
+
+
+####### PARTIE 4 : EN FRACTION DU RFR
+
+# Ce que chaque ménage a payé de TF en 2020, 2021 et 2022
+carac_men$ident <- as.factor(carac_men$ident)
+dt_merged_REI_suivi$ident21 <- as.factor(dt_merged_REI_suivi$ident21)
+
+TF_men_2020 <- dt_merged_REI_suivi[, sum(Montant_TF_NETTE_proratise_2020), by = "ident21"]
+setnames(TF_men_2020, "V1", "TF_nette_2020")
+TF_men_2021 <- dt_merged_REI_suivi[, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+setnames(TF_men_2021, "V1", "TF_nette_2021")
+TF_men_2022 <- dt_merged_REI_suivi[, sum(Montant_TF_NETTE_proratise_2022), by = "ident21"]
+setnames(TF_men_2022, "V1", "TF_nette_2022")
+
+TF_men <- merge(TF_men_2020, TF_men_2021, by = "ident21")
+TF_men <- merge(TF_men, TF_men_2022, by = "ident21")
+
+merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
+
+merged[, Part_TF_rfr_2020 := 100*TF_nette_2020/rfr]
+merged[, Part_TF_rfr_2021 := 100*TF_nette_2021/rfr]
+merged[, Part_TF_rfr_2022 := 100*TF_nette_2022/rfr]
+
+
+
+
+quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
+#### Pour monter le nb de quantiles, s'il y a des doublons :
+# quantiles_unique <- unique(quantiles)
+merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
+
+
+moy_2020 <- merged[, weighted.mean(Part_TF_rfr_2020, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_2020$annee <- 2020
+moy_2021 <- merged[, weighted.mean(Part_TF_rfr_2021, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_2021$annee <- 2021
+moy_2022 <- merged[, weighted.mean(Part_TF_rfr_2022, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_2022$annee <- 2022
+
+moy_tf_rfr <- rbindlist(list(moy_2020, moy_2021, moy_2022))
+moy_tf_rfr$annee <- as.factor(moy_tf_rfr$annee)
+moy_tf_rfr$Quintile_rfr <- as.numeric(moy_tf_rfr$Quintile_rfr)
+
+
+#### Puis graphique :
+# On prépare tous les arguments 
+data_loc <- copy(moy_tf_rfr)
+x <- "Quintile_rfr"
+y <- "V1"
+fill <- 'annee'
+xlabel <- "Déciles revenu fiscal de référence"
+ylabel <- "Part du RFR payé sous forme de TF"
+ysuffix <- "%"
+filllabel <- "Année"
+
+# L'adresse de sauvegarde du graphique
+titre_save <- paste("Moyenne_TFPB_RFR_Toutes_annees", ".pdf", sep = "") 
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
+
+# Titres et sous-titres
+titre_graphe <- "Montant de TF nette relativement au RFR du ménage"
+sous_titre_graphe <- "Moyenne des ratios par quantile de RFR"
+
+# Pour virer le titre si on le souhaite
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
+
+# On appelle la fonction
+Faire_graphique_barplot_avec_fill(data_loc, x, y, fill, xlabel, ylabel, filllabel, ysuffix, titre_save, titre_graphe, sous_titre_graphe)
+
+
+################################################################################
+# ================= SCENARIO 1 : A BAS LES RESIDENCES SECONDAIRES ! ============
+################################################################################
+# On reste sur 2021
+Montant_TF_Tot <- sum(dt_merged_REI_2021$Montant_TF_NETTE_proratise_2021, na.rm = TRUE)
+Montant_TF_res_princ <- sum(dt_merged_REI_2021[Residence_principale == T]$Montant_TF_NETTE_proratise_2021, na.rm = TRUE)
+Montant_TF_res_sec <- sum(dt_merged_REI_2021[Residence_principale == F]$Montant_TF_NETTE_proratise_2021, na.rm = TRUE)
+
+100*Montant_TF_res_sec/Montant_TF_Tot # = 50.8% donc on peut doubler la TF sur les res secondaires et la supprimer sur les res principales, et ça sera neutre sur le plan budgétaire !
+
+
+# moyenne de : TF/RFR, par quantile de RFR, observé
+# Scénarion actuel
+carac_men$ident <- as.factor(carac_men$ident)
+dt_merged_REI_2021$ident21 <- as.factor(dt_merged_REI_2021$ident21)
+TF_men <- dt_merged_REI_suivi[, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+setnames(TF_men, "V1", "TF_nette")
+merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
+merged[, Part_TF_rfr := 100*TF_nette/rfr]
+
+quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
+merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
+
+moy_tf_rfr <- merged[, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_tf_rfr$Quintile_rfr <- as.numeric(moy_tf_rfr$Quintile_rfr)
+
+moy_tf_rfr$scenario <- "Actuel"
+
+
+# Contrefactuel 1 : on double uniquement les TF des résidences secondaires
+dt_merged_REI_contrefact <- copy(dt_merged_REI_2021)
+
+dt_merged_REI_contrefact[Residence_principale == F, Montant_TF_NETTE_proratise_2021 := Montant_TF_NETTE_proratise_2021*2]
+
+carac_men$ident <- as.factor(carac_men$ident)
+dt_merged_REI_contrefact$ident21 <- as.factor(dt_merged_REI_contrefact$ident21)
+TF_men <- dt_merged_REI_contrefact[, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+setnames(TF_men, "V1", "TF_nette")
+merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
+merged[, Part_TF_rfr := 100*TF_nette/rfr]
+
+quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
+merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
+
+moy_tf_rfr_contrefact_1 <- merged[, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_tf_rfr_contrefact_1$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_1$Quintile_rfr)
+moy_tf_rfr_contrefact_1$scenario <- "TF doublée pour les RS"
+
+
+# Contrefactuel 2 : on supprime uniquement les TF des résidences principales
+dt_merged_REI_contrefact <- copy(dt_merged_REI_2021)
+
+dt_merged_REI_contrefact[Residence_principale == T, Montant_TF_NETTE_proratise_2021 := 0]
+
+carac_men$ident <- as.factor(carac_men$ident)
+dt_merged_REI_contrefact$ident21 <- as.factor(dt_merged_REI_contrefact$ident21)
+TF_men <- dt_merged_REI_contrefact[, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+setnames(TF_men, "V1", "TF_nette")
+merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
+merged[, Part_TF_rfr := 100*TF_nette/rfr]
+
+quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
+merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
+
+moy_tf_rfr_contrefact_2 <- merged[, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_tf_rfr_contrefact_2$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_2$Quintile_rfr)
+moy_tf_rfr_contrefact_2$scenario <- "TF supprimée pour les RP"
+
+
+
+# Contrefactuel 3 : combinaison des deux
+dt_merged_REI_contrefact <- copy(dt_merged_REI_2021)
+
+ratio <- Montant_TF_res_princ/Montant_TF_Tot # Les résidences principales représentent 49% de la TF totale ==> On peut doubler la TF des res secondaires et enlever la TF des res principales !
+
+dt_merged_REI_contrefact[Residence_principale == F, Montant_TF_NETTE_proratise_2021 := Montant_TF_NETTE_proratise_2021*2]
+dt_merged_REI_contrefact[Residence_principale == T, Montant_TF_NETTE_proratise_2021 := 0]
+carac_men$ident <- as.factor(carac_men$ident)
+dt_merged_REI_contrefact$ident21 <- as.factor(dt_merged_REI_contrefact$ident21)
+TF_men <- dt_merged_REI_contrefact[, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+setnames(TF_men, "V1", "TF_nette")
+merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
+merged[, Part_TF_rfr := 100*TF_nette/rfr]
+
+quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
+merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
+
+moy_tf_rfr_contrefact_3 <- merged[, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_tf_rfr_contrefact_3$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_2$Quintile_rfr)
+moy_tf_rfr_contrefact_3$scenario <- "Combinaison des deux"
+
+
+
+
+
+moy_tf_rfr <- rbindlist(list(moy_tf_rfr, moy_tf_rfr_contrefact_1, moy_tf_rfr_contrefact_2, moy_tf_rfr_contrefact_3))
+
+#### Puis graphique :
+data_loc <- copy(moy_tf_rfr)
+x <- "Quintile_rfr"
+y <- "V1"
+fill <- 'scenario'
+xlabel <- "Déciles revenu fiscal de référence"
+ylabel <- "Part du RFR payé sous forme de TF"
+ysuffix <- "%"
+filllabel <- "Scénario"
+
+titre_save <- paste("Moyenne_TFPB_RFR_Toutes_annees_scenar_1", ".pdf", sep = "") 
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
+
+titre_graphe <- "Montant de TF nette relativement au RFR du ménage dans le scénario 1"
+sous_titre_graphe <- "Moyenne des ratios par quantile de RFR"
+
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
+Faire_graphique_barplot_avec_fill(data_loc, x, y, fill, xlabel, ylabel, filllabel, ysuffix, titre_save, titre_graphe, sous_titre_graphe)
+
+
+
+
+################################################################################
+########## FUSION CAHIER GRAPHIQUE #############################################
+################################################################################
+# A garder à la fin du script : récupère tous les graphiques pdf générés et les fusionne dans le dossier racine du projet
+
+titre_save <- paste("cahier_graphique_",annee,".pdf", sep = "")
+titre_save <- paste(repgen, titre_save, sep ='/')
+pdf_combine(liste_chemins_graphes, output = titre_save)
 
 ################################################################################
 ################### BROUILLON BENJAMIN ######################################### 
@@ -362,95 +767,6 @@ dt_merged_REI_suivi # Le dt avec 3 années
 
 
 
-
-
-
-# Visualisation du taux moyen apparent de TFPB brute en 2021 par décile de
-# niveau de vie des ménages:
-graph4 <- ggplot(tx_moyen_apparent_decile_ndv) +
-  aes(x = decile_ndv, y = tx_apparent_moy_TFPB_b) +
-  geom_col(fill = "#112446") +
-  labs(
-    x = "Déciles de niveau de vie",
-    y = "Taux moyen apparent",
-    title = "Taux moyen apparent de TFPB brute en 2021",
-    subtitle = "Distribution par décile de niveau de vie des ménages"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold",
-                              hjust = 0.5),
-    plot.subtitle = element_text(hjust = 0.5)
-  )
-
-
-
-# Visualisation du montant total d'assiette de TFPB brute 2021
-# par décile de niveau de vie des ménages
-graph5 <- ggplot(tx_moyen_apparent_decile_ndv) +
-  aes(x = decile_ndv, y = assiette_TFPB_mde) +
-  geom_col(fill = "#112446") +
-  labs(
-    x = "Déciles de niveau de vie",
-    y = "Assiette (en milliard d'euros)",
-    title = "Assiette de la TFPB brute en 2021",
-    subtitle = "Distribution par décile de niveau de vie"
-  ) +
-  theme_minimal() +
-  theme(
-    plot.title = element_text(face = "bold",
-                              hjust = 0.5),
-    plot.subtitle = element_text(hjust = 0.5)
-  )
-
-
-
-
-
-#######################
-
-
-nrow(dt_merged_REI[is.na(jandeb)])
-
-carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
-nrow(carac_tf[is.na(jandeb)])
-
-
-
-
-
-
-##### QQ VERIFS ##############
-# Un premier calcul de la taxe foncière brute
-summary(dt_merged_REI$vlbaia - 2*dt_merged_REI$bipeva) # bipeva = 1/2 de la VLC ==> Ce qu'on prend comme valeur de référence pour l'impôt
-
-dt_merged_REI[is.na(Libelle_commune)] # Bon on n'a pas les outre mer...
-100*nrow(dt_merged_REI[is.na(Libelle_commune)])/nrow(dt_merged_REI) # Bon ça fait 0.17% des observations pas très grave sans doute
-
-table(dt_merged_REI$Logement_degreve)
-table(dt_merged_REI$Logement_exonere)
-
-summary(dt_merged_REI$Montant_TF_BRUT)
-summary(dt_merged_REI$Montant_TF_NETTE)
-
-table(dt_merged_REI$Montant_TF_BRUT > dt_merged_REI$Montant_TF_NETTE) # 749 ménages ont une diminution de la TF
-
-
-# Logements en double ??????
-carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
-carac_tf[ident21 == "21038699"] # Hum hum il y a un logement en double là...
-
-# En fait il y en a beaucoup !!!
-nrow(unique(carac_tf))
-nrow(carac_tf)
-
-
-
-
-
-nrow(dt_merged_REI[Montant_TF_NETTE < 0]) # 8 lignes ont un tx négatif
-# Pour vérifier les conditions ==> Ce sont des logements dégrévés
-merge(dt_merged_REI[Montant_TF_NETTE < 0], carac_men, all.x = TRUE, all.y = FALSE, by.x = "ident21", by.y = "ident")
 
 
 

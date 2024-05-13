@@ -21,3 +21,5 @@ library(pdftools) # Pour fusionner les pdf
 library(readxl)
 
 library(xtable)
+
+library(modi) #POur les quantiles pondérés
