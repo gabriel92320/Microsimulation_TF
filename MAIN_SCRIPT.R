@@ -37,7 +37,7 @@ toutes_annees <- TRUE # Pour calculer les montants sur les 3 années 2020, 2021 
 mettre_titres_graphiques <- TRUE # Pour sauvegarder les graphes SANS leur titre (pour pouvoir mettre le titre en caption latex)
 utiliser_dvldif2a <- TRUE # Pour utiliser la variable dvldif2a = Montant de VL exonérée (valeur de l’année) pour le calcul TF net ==> Ne change pas grand chose, mais je pense que c'est plus propre parce que déjà contenu dans la base
 
-nb_quantiles <- 20 # Pour tracer la TF en fnt des quantiles de RFR,
+nb_quantiles <- 20 # Pour tracer la TF en fnt des quantiles de RFR
 
 ################################################################################
 # =========== 01 = PACKAGES ET SCRIPTS DE FONCTIONS  ===========================
