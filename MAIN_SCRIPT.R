@@ -34,7 +34,7 @@ repo_bases_intermediaires <- paste(repgen, "Bases_intermediaires" , sep = "/")
 annee <- 2021 # Pour 2020 il y a le tx départemental en plus
 
 mettre_titres_graphiques <- TRUE # Pour sauvegarder les graphes SANS leur titre (pour pouvoir mettre le titre en caption latex)
-
+utiliser_dvldif2a <- FALSE # Pour utiliser la variable dvldif2a = Montant de VL exonérée (valeur de l’année) pour le calcul TF net ==> Ne change pas grand chose, mais je pense que c'est plus propre parce que déjà contenu dans la base
 ################################################################################
 # =========== 01 = PACKAGES ET SCRIPTS DE FONCTIONS  ===========================
 ################################################################################
@@ -103,8 +103,8 @@ carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
 carac_men_loc <- copy(carac_men)
 dt_merged_REI_loc <- copy(dt_merged_REI)
 annee_loc <- annee
-dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc, annee_loc)
-  
+dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc, annee_loc, utiliser_dvldif2a)
+
 
 # On stocke tous les chemins des pdf générés, pour pouvoir les fusionner à la fin et obtenir un joli cahier graphique
 liste_chemins_graphes <- c()
