@@ -32,9 +32,10 @@ repo_bases_intermediaires <- paste(repgen, "Bases_intermediaires" , sep = "/")
 
 # Ici quelques paramètres généraux
 annee <- 2021 # Pour 2020 il y a le tx départemental en plus
+toutes_annees <- TRUE # Pour calculer les montants sur les 3 années 2020, 2021 et 2022
 
 mettre_titres_graphiques <- TRUE # Pour sauvegarder les graphes SANS leur titre (pour pouvoir mettre le titre en caption latex)
-utiliser_dvldif2a <- FALSE # Pour utiliser la variable dvldif2a = Montant de VL exonérée (valeur de l’année) pour le calcul TF net ==> Ne change pas grand chose, mais je pense que c'est plus propre parce que déjà contenu dans la base
+utiliser_dvldif2a <- TRUE # Pour utiliser la variable dvldif2a = Montant de VL exonérée (valeur de l’année) pour le calcul TF net ==> Ne change pas grand chose, mais je pense que c'est plus propre parce que déjà contenu dans la base
 ################################################################################
 # =========== 01 = PACKAGES ET SCRIPTS DE FONCTIONS  ===========================
 ################################################################################
@@ -45,7 +46,7 @@ source(paste(repo_prgm , "04_Preparation_graphiques.R" , sep = "/"))
 source(paste(repo_prgm , "05_Graphiques.R" , sep = "/"))
 
 ################################################################################
-# ================= 02 = PREPARATION DES DT  ===================================
+# ================= 02 = PREPARATION DES DT sur 1 an ===========================
 ################################################################################
 
 liste_cols_REI_loc <- c("DEPARTEMENT",
@@ -71,8 +72,6 @@ liste_cols_REI_loc <- c("DEPARTEMENT",
                     "FB.-.TSE./.BASE.NETTE",
                     "FB.-.TSE./.TAUX.NET")
 
-
-
 annee_loc <- annee
 # Faire_dt_SOUS_REI(liste_cols_REI_loc, annee_loc) # A DECOMMENTER LA PREMIERE FOIS : Importe le REI, ne sélectionne que les colonnes de liste_cols_REI_loc et sauvegarde
 
@@ -88,12 +87,14 @@ if(annee == 2020){ # En 2020 il faut ajouter le tx du dpt
   liste_cols_REI_loc <- append(liste_cols_REI_loc, "FB.-.DEP./.TAUX.NET")
 }
 
+annee_loc <- annee
 # On merge REI et carac_tf, on est donc à l'échelle du LOGEMENT
-dt_merged_REI <- Importer_et_merge_REI_carac_tf(liste_cols_REI_loc)
+dt_merged_REI <- Importer_et_merge_REI_carac_tf(liste_cols_REI_loc, annee_loc)
 
 # On calcule la TF brute par logement
 dt_merged_REI_loc <- copy(dt_merged_REI)
-dt_merged_REI <- Calculer_taux_brut(dt_merged_REI_loc)
+annee_loc <- annee
+dt_merged_REI <- Calculer_taux_brut(dt_merged_REI_loc, annee_loc)
   
 # On importe aussi carac_men et caract_tf
 carac_men <- data.table(readRDS(paste(repo_data, "carac_men.rds", sep = "/")))
@@ -108,8 +109,6 @@ dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc, annee_loc, 
 
 # On stocke tous les chemins des pdf générés, pour pouvoir les fusionner à la fin et obtenir un joli cahier graphique
 liste_chemins_graphes <- c()
-
-
 
 
 ################################ GRAPHIQUES ####################################
@@ -130,6 +129,7 @@ TFPB_nette_type_com_UU_p <- Calcul_montant_tot_moy_TFPB_type_com_UU(dt_merged_RE
 #ATTENTION SEULES LES RESIDENCES PRINCIPALES SONT PRISES EN COMPTE ICI!!
 TFPB_nette_statut_com_UU_p <- Calcul_montant_tot_moy_TFPB_statut_com_UU(dt_merged_REI_loc, var_montant_TF)
 
+print(xtable(TFPB_nette_statut_com_UU_p), include.rownames = FALSE)
 
 
 ####### PARTIE 1 : MONTANT TOTAL DE LA TF NETTE
@@ -283,6 +283,73 @@ Faire_graphique_barplot(data_loc, x, y,xlabel, ylabel, ysuffix, titre_save, titr
 titre_save <- paste("cahier_graphique_",annee,".pdf", sep = "")
 titre_save <- paste(repgen, titre_save, sep ='/')
 pdf_combine(liste_chemins_graphes, output = titre_save)
+
+
+################################################################################
+# ================= PREPARATION DES DT sur 3 ans ===============================
+################################################################################
+liste_cols_REI_loc <- c("DEPARTEMENT",
+                        "COMMUNE",
+                        "Numéro.national.du.groupement",
+                        "FB.-.COMMUNE./.TAUX.NET", # Le Tx communal 
+                        "FB.-.GFP./.TAUX.VOTE", # Le taux pour le montant brut à l'échelle du GFP = EPCI
+                        "FB.-.GFP./.TAUX.APPLICABLE.SUR.LE.TERRITOIRE.DE.LA.COMMUNE", # Le tx pour montant net
+                        "Libellé.commune")
+
+carac_men <- data.table(readRDS(paste(repo_data, "carac_men.rds", sep = "/")))
+carac_tf <- data.table(readRDS(paste(repo_data, "carac_tf.rds", sep = "/")))
+
+
+# Importation 2020
+liste_cols_REI_loc_20 <- append(liste_cols_REI_loc, "FB.-.DEP./.TAUX.NET")
+annee_loc <- 2020
+dt_merged_REI <- Importer_et_merge_REI_carac_tf(liste_cols_REI_loc_20, annee_loc)
+dt_merged_REI <- Calculer_taux_brut(copy(dt_merged_REI), annee_loc)
+dt_merged_REI <- Calculer_taux_net(copy(dt_merged_REI), copy(carac_men), annee_loc, utiliser_dvldif2a)
+dt_merged_REI_2020 <- copy(dt_merged_REI)
+
+# Importation 2021
+annee_loc <- 2021
+dt_merged_REI <- Importer_et_merge_REI_carac_tf(liste_cols_REI_loc, annee_loc)
+dt_merged_REI <- Calculer_taux_brut(copy(dt_merged_REI), annee_loc)
+dt_merged_REI <- Calculer_taux_net(copy(dt_merged_REI), copy(carac_men), annee_loc, utiliser_dvldif2a)
+dt_merged_REI_2021 <- copy(dt_merged_REI)
+
+# Importation 2022
+annee_loc <- 2022
+dt_merged_REI <- Importer_et_merge_REI_carac_tf(liste_cols_REI_loc, annee_loc)
+dt_merged_REI <- Calculer_taux_brut(copy(dt_merged_REI), annee_loc)
+dt_merged_REI <- Calculer_taux_net(copy(dt_merged_REI), copy(carac_men), annee_loc, utiliser_dvldif2a)
+dt_merged_REI_2022 <- copy(dt_merged_REI)
+
+
+# La liste des colonnes qu'on veut indicer par l'année et conserver
+liste_cols_annee <- c("FB_COMMUNE_TAUX_NET", "FN_GFP_TAUX_APPLICABLE_SUR_LE_TERRITOIRE_DE_LA_COMMUNE", "Montant_TF_BRUT_proratise", "Montant_TF_NETTE_proratise")
+# La liste des colonnes qu'on ne va pas bouger
+liste_cols_immobiles <- colnames(carac_tf)
+liste_cols_immobiles_2 <- c("LIBGEO","UU2020","LIBUU2020","TYPE_COMMUNE_UU","STATUT_COM_UU")
+liste_cols_immobiles <- append(liste_cols_immobiles, liste_cols_immobiles_2)
+
+dt_merged_REI_suivi <- dt_merged_REI_2022[,..liste_cols_immobiles]
+
+# On renome les variables qu'on bouge et on les met dans notre nouveau dt de travail
+for(var in liste_cols_annee){
+  # 2020
+  nv_nom <- paste(var, "2020", sep = "_")
+  setnames(dt_merged_REI_2020, var, nv_nom)
+  dt_merged_REI_suivi[[nv_nom]] <- dt_merged_REI_2020[[nv_nom]]
+  
+  nv_nom <- paste(var, "2021", sep = "_")
+  setnames(dt_merged_REI_2021, var, nv_nom)
+  dt_merged_REI_suivi[[nv_nom]] <- dt_merged_REI_2021[[nv_nom]]
+  
+  nv_nom <- paste(var, "2022", sep = "_")
+  setnames(dt_merged_REI_2022, var, nv_nom)
+  dt_merged_REI_suivi[[nv_nom]] <- dt_merged_REI_2022[[nv_nom]]
+}
+
+
+dt_merged_REI_suivi # Le dt avec 3 années
 
 ################################################################################
 ################### BROUILLON BENJAMIN ######################################### 

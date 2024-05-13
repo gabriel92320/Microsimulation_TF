@@ -11,6 +11,11 @@ Faire_dt_SOUS_REI <- function(liste_cols_REI_loc, annee_loc = 2021){
   if(annee_loc == 2020){
     REI_21 <- Renomer_colonnes_REI_2020(REI_21) # Il faut renomer les colonnes
     liste_cols_REI_loc <- append(liste_cols_REI_loc, "FB.-.DEP./.TAUX.NET") # Il faut ajouter le taux départemental !
+    
+    SOUS_REI$COMMUNE <- iconv(SOUS_REI$COMMUNE, from = "UTF-8", to = "ASCII", sub = "")
+    SOUS_REI$DEPARTEMENT <- iconv(SOUS_REI$DEPARTEMENT, from = "UTF-8", to = "ASCII", sub = "")
+    SOUS_REI$Libellé.commune <- iconv(SOUS_REI$Libellé.commune, from = "UTF-8", to = "ASCII", sub = "")
+    
   }
   
   SOUS_REI <- REI_21[, ..liste_cols_REI_loc]
@@ -27,6 +32,7 @@ Importer_et_merge_REI_carac_tf <- function(liste_cols_REI_loc, annee_loc = 2021)
   load(paste(repo_bases_intermediaires, "/REI_",annee_loc,"_SELECT.RData", sep = ""))
   SOUS_REI <- SOUS_REI[,..liste_cols_REI_loc]
   
+  
   # Faire quelques setnames pour éviter les problèmes
   try(setnames(SOUS_REI, "Numéro.national.du.groupement", "Numero_national_du_groupement"), silent = TRUE)
   try(setnames(SOUS_REI, "FB.-.COMMUNE./.TAUX.NET", "FB_COMMUNE_TAUX_NET"), silent = TRUE)
@@ -34,7 +40,9 @@ Importer_et_merge_REI_carac_tf <- function(liste_cols_REI_loc, annee_loc = 2021)
   try(setnames(SOUS_REI, "FB.-.TSE./.TAUX.NET", "FB_TSE_TAUX_NET"), silent = TRUE)
   try(setnames(SOUS_REI, "Libellé.commune", "Libelle_commune"), silent = TRUE)
   try(setnames(SOUS_REI, "FB.-.GFP./.TAUX.VOTE", "FB_GFP_TAUX_VOTE"), silent = TRUE)
+  try(setnames(SOUS_REI, "FB.-.DEP./.TAUX.NET", "FB_DEP_TAUX_NET"), silent = TRUE)
   
+
   
   # Importer carac_men et carac_tf
   # carac_men <- data.table(readRDS(paste(repo_data, "carac_men.rds", sep = "/")))
@@ -50,15 +58,50 @@ Importer_et_merge_REI_carac_tf <- function(liste_cols_REI_loc, annee_loc = 2021)
   carac_tf[, ccocom_REI := as.character(ccocom)]
   carac_tf[, ccodep := as.character(ccodep)]
   SOUS_REI[, DEPARTEMENT := as.character(DEPARTEMENT)]
-  SOUS_REI[, COMMUNE := as.character(COMMUNE)]
+  SOUS_REI[, COMMUNE := as.character(COMMUNE)]  
+  
+  
+  
+  extraire_numeros <- function(chaine) { # Pour l'année 2020...
+    # Recherche du dernier "_" dans la chaîne
+    dernier_underscore <- max(gregexpr("_", chaine)[[1]])
+    # Extraction des caractères après le dernier "_"
+    numeros <- substr(chaine, dernier_underscore + 1, nchar(chaine))
+    return(numeros)
+  }
+
+  if(annee_loc == 2020){ # Le format est chiant
+    SOUS_REI$DEPARTEMENT   <- gsub("_x0030_", "0", SOUS_REI$DEPARTEMENT  )
+    SOUS_REI$DEPARTEMENT   <- gsub("_x0031_", "1", SOUS_REI$DEPARTEMENT  )
+    SOUS_REI$DEPARTEMENT   <- gsub("_x0032_", "2", SOUS_REI$DEPARTEMENT  )
+    SOUS_REI$DEPARTEMENT   <- gsub("_x0033_", "3", SOUS_REI$DEPARTEMENT  )
+    SOUS_REI$DEPARTEMENT   <- gsub("_x0034_", "4", SOUS_REI$DEPARTEMENT  )
+    SOUS_REI$DEPARTEMENT   <- gsub("_x0035_", "5", SOUS_REI$DEPARTEMENT  )
+    SOUS_REI$DEPARTEMENT   <- gsub("_x0036_", "6", SOUS_REI$DEPARTEMENT  )
+    SOUS_REI$DEPARTEMENT   <- gsub("_x0037_", "7", SOUS_REI$DEPARTEMENT  )
+    SOUS_REI$DEPARTEMENT   <- gsub("_x0038_", "8", SOUS_REI$DEPARTEMENT  )
+    SOUS_REI$DEPARTEMENT   <- gsub("_x0039_", "9", SOUS_REI$DEPARTEMENT  )
+    
+    SOUS_REI$COMMUNE <- gsub("_x0030_", "0", SOUS_REI$COMMUNE)
+    SOUS_REI$COMMUNE <- gsub("_x0031_", "1", SOUS_REI$COMMUNE)
+    SOUS_REI$COMMUNE <- gsub("_x0032_", "2", SOUS_REI$COMMUNE)
+    SOUS_REI$COMMUNE <- gsub("_x0033_", "3", SOUS_REI$COMMUNE)
+    SOUS_REI$COMMUNE <- gsub("_x0034_", "4", SOUS_REI$COMMUNE)
+    SOUS_REI$COMMUNE <- gsub("_x0035_", "5", SOUS_REI$COMMUNE)
+    SOUS_REI$COMMUNE <- gsub("_x0036_", "6", SOUS_REI$COMMUNE)
+    SOUS_REI$COMMUNE <- gsub("_x0037_", "7", SOUS_REI$COMMUNE)
+    SOUS_REI$COMMUNE <- gsub("_x0038_", "8", SOUS_REI$COMMUNE)
+    SOUS_REI$COMMUNE <- gsub("_x0039_", "9", SOUS_REI$COMMUNE)
+  }
+  
+  
+
   
   # Ajouter des zéros au début si nécessaire pour obtenir un identifiant à trois chiffres
   carac_tf[, ccocom_REI := sprintf("%03d", as.integer(ccocom_REI))]
   carac_tf[, ccoifp := sprintf("%03d", as.integer(ccoifp))]
   carac_tf[, ccocom := sprintf("%03d", as.integer(ccocom))]
   
-  
-
   
   # ATTENTION pour Lyon, Paris, Marseille il faut changer le ccocom pour mettre le code de la commune, et non pas des arrondissements
   liste_num_Lyon <- as.character(381:389)

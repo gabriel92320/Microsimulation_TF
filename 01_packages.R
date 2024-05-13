@@ -19,3 +19,5 @@ library(readxl)
 library(pdftools) # Pour fusionner les pdf
 
 library(readxl)
+
+library(xtable)

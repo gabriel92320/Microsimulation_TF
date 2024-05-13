@@ -17,7 +17,7 @@ Assigner_res_principale <- function(dt_loc) {
 
 
 
-Calculer_taux_brut <- function(dt_merged_REI_loc){
+Calculer_taux_brut <- function(dt_merged_REI_loc, annee_loc = 2021){
   # Calcul la TF brut par logement
   # Fixage des types
   dt_merged_REI_loc$vlbaia <- as.numeric(dt_merged_REI_loc$vlbaia)
@@ -29,9 +29,15 @@ Calculer_taux_brut <- function(dt_merged_REI_loc){
   
   dt_merged_REI_loc[, Montant_communal_TF := FB_COMMUNE_TAUX_NET * bipeva/100]
   dt_merged_REI_loc[, Montant_GFP_TF := FN_GFP_TAUX_APPLICABLE_SUR_LE_TERRITOIRE_DE_LA_COMMUNE * bipeva/100]
-  dt_merged_REI_loc[, Montant_TF_BRUT := Montant_communal_TF + Montant_GFP_TF]
   
-  dt_merged_REI_loc[, Montant_TF_BRUT_proratise := Montant_TF_BRUT/nb_prop]
+  if(annee_loc == 2020){ # Alors il faut ajouter le tx départemental
+    dt_merged_REI_loc[, Montant_DEP_TF := FB_DEP_TAUX_NET * bipeva/100]
+    dt_merged_REI_loc[, Montant_TF_BRUT := Montant_communal_TF + Montant_GFP_TF + Montant_DEP_TF]
+  }else{
+    dt_merged_REI_loc[, Montant_TF_BRUT := Montant_communal_TF + Montant_GFP_TF]
+  }
+
+  dt_merged_REI_loc[, Montant_TF_BRUT_proratise := Montant_TF_BRUT/nb_prop]    
   
   return(dt_merged_REI_loc)
 }
@@ -84,7 +90,11 @@ Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc, annee_loc = 2021
   }else{
     # En version 2, avec la variable dvldif2a
     dt_merged_REI_loc[, Montant_TF_NETTE := Montant_TF_BRUT]
-    dt_merged_REI_loc[!is.na(dvldif2a), Montant_TF_NETTE := (FN_GFP_TAUX_APPLICABLE_SUR_LE_TERRITOIRE_DE_LA_COMMUNE + FB_COMMUNE_TAUX_NET)*dvldif2a/(2*100)] # On recalcule la TF nette
+    if(annee_loc == 2020){ # Penser à ajouter le tx départemental
+      dt_merged_REI_loc[!is.na(dvldif2a), Montant_TF_NETTE := (FN_GFP_TAUX_APPLICABLE_SUR_LE_TERRITOIRE_DE_LA_COMMUNE + FB_COMMUNE_TAUX_NET + FB_DEP_TAUX_NET)*dvldif2a/(2*100)] # On recalcule la TF nette
+    }else{
+      dt_merged_REI_loc[!is.na(dvldif2a), Montant_TF_NETTE := (FN_GFP_TAUX_APPLICABLE_SUR_LE_TERRITOIRE_DE_LA_COMMUNE + FB_COMMUNE_TAUX_NET)*dvldif2a/(2*100)] # On recalcule la TF nette
+    }
     dt_merged_REI_loc[, Montant_TF_NETTE_proratise := Montant_TF_NETTE/nb_prop]
   
   }
@@ -100,9 +110,8 @@ Calculer_taux_net <- function(dt_merged_REI_loc, carac_men_loc, annee_loc = 2021
   # table(dt_merged_REI_loc[Logement_exonere == F,]$pexb_C) # Tous les logements qu'on compte comme "non exonérés" ont un tx d'éxonération NAN => 0% ==> On n'en a oublié aucun
   
   # dt_merged_REI_loc[Logement_exonere == F & !is.na(dvldif2a)] # Tous les logements où dvldif2a est renseigné sont des logements exonérés
-  # table(dt_merged_REI_loc[!is.na(dvldif2a)]$dvldif2a == dt_merged_REI_loc[!is.na(dvldif2a)]$dvlpera * dt_merged_REI_loc[!is.na(dvldif2a)]$pexb_C/10000) 
+  # table(dt_merged_REI_loc[!is.na(dvldif2a)]$dvldif2a == dt_merged_REI_loc[!is.na(dvldif2a)]$dvlpera * dt_merged_REI_loc[!is.na(dvldif2a)]$pexb_C/10000)
   
-  
-  #3139  3545   311  1187  2290  3545  1054  1054  3762  1596  1596  2241   266
+
   return(dt_merged_REI_loc)
 }
