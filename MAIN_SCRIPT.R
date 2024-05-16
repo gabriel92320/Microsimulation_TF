@@ -771,28 +771,17 @@ data_loc <- copy(dt_merged)
 titre_graphe <- "Carte du taux moyen payé par département en 2021"
 sous_titre_graphe <- "Montant moyen payé en euro"
 
-# Plot de la carte
-ggplot() +
-  geom_sf(data = dt_merged, aes(fill = Fill_carte)) +
-  scale_fill_viridis() +
-  theme_void() +
-  labs(
-    title = titre_graphe,
-    subtitle = sous_titre_graphe
-  ) +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
-        text = element_text(size = 18),  # Changer la taille de la police générale
-        axis.title = element_text(size = 18),  # Changer la taille de la police des titres d'axe
-        axis.text = element_text(size = 18),  # Changer la taille de la police des étiquettes d'axe
-        plot.title = element_text(size = 18, face = "bold", hjust = 0.5),  # Changer la taille de la police du titre du graphique
-        legend.text = element_text(size = 18),
-        plot.subtitle = element_text(hjust = 0.5),
-        legend.position="bottom") 
+if(!mettre_titres_graphiques){
+  titre_graphe <- ""
+  sous_titre_graphe <- ""
+}
 
+titre_save <- paste("Carte_tx_moyen_dtp", ".pdf", sep = "") 
+titre_save <- paste(repo_sorties, titre_save, sep ='/')
+liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
 
-
-
+Faire_carte_departements(data_loc, titre_graphe, sous_titre_graphe, titre_save)
+  
 
 
 

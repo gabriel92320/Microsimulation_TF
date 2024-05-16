@@ -69,3 +69,31 @@ Faire_graphique_barplot_avec_fill <- function(data_loc, x, y, fill, xlabel, ylab
   
 }
 
+
+
+
+Faire_carte_departements <- function(data_loc, titre_graphe, sous_titre_graphe, titre_save){
+  # Plot de la carte
+  graph1 <- ggplot() +
+    geom_sf(data = data_loc, aes(fill = Fill_carte)) +
+    scale_fill_viridis() +
+    theme_void() +
+    labs(
+      title = titre_graphe,
+      subtitle = sous_titre_graphe
+    ) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
+          text = element_text(size = 18),  # Changer la taille de la police générale
+          axis.title = element_text(size = 18),  # Changer la taille de la police des titres d'axe
+          axis.text = element_text(size = 18),  # Changer la taille de la police des étiquettes d'axe
+          plot.title = element_text(size = 18, face = "bold", hjust = 0.5),  # Changer la taille de la police du titre du graphique
+          legend.text = element_text(size = 18),
+          plot.subtitle = element_text(hjust = 0.5),
+          legend.position="bottom") 
+  
+  
+  print(graph1)
+  ggsave(titre_save, graph1 ,  width = 297, height = 210, units = "mm")
+}
+
