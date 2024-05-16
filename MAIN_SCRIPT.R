@@ -678,7 +678,7 @@ merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantil
 
 moy_tf_rfr_contrefact_1 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr_contrefact_1$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_1$Quintile_rfr)
-moy_tf_rfr_contrefact_1$scenario <- "TF doublée pour les RS"
+moy_tf_rfr_contrefact_1$scenario <- "Doublée pour les RS"
 
 
 # Contrefactuel 2 : on supprime uniquement les TF des résidences principales
@@ -698,7 +698,7 @@ merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantil
 
 moy_tf_rfr_contrefact_2 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr_contrefact_2$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_2$Quintile_rfr)
-moy_tf_rfr_contrefact_2$scenario <- "TF supprimée pour les RP"
+moy_tf_rfr_contrefact_2$scenario <- "Supprimée pour les RP"
 
 
 
@@ -723,11 +723,8 @@ moy_tf_rfr_contrefact_3 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=po
 moy_tf_rfr_contrefact_3$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_2$Quintile_rfr)
 moy_tf_rfr_contrefact_3$scenario <- "Combinaison des deux"
 
-
-
-
-
 moy_tf_rfr <- rbindlist(list(moy_tf_rfr, moy_tf_rfr_contrefact_1, moy_tf_rfr_contrefact_2, moy_tf_rfr_contrefact_3))
+
 
 #### Puis graphique :
 data_loc <- copy(moy_tf_rfr)
@@ -737,7 +734,7 @@ fill <- 'scenario'
 xlabel <- "Déciles revenu fiscal de référence"
 ylabel <- "Part du RFR payé sous forme de TF"
 ysuffix <- "%"
-filllabel <- "Scénario"
+filllabel <- "Scénario :"
 
 titre_save <- paste("Moyenne_TFPB_RFR_Toutes_annees_scenar_1", ".pdf", sep = "") 
 titre_save <- paste(repo_sorties, titre_save, sep ='/')
@@ -751,6 +748,14 @@ if(!mettre_titres_graphiques){
   sous_titre_graphe <- ""
 }
 Faire_graphique_barplot_avec_fill(data_loc, x, y, fill, xlabel, ylabel, filllabel, ysuffix, titre_save, titre_graphe, sous_titre_graphe)
+
+
+################################################################################
+############ CARTE PAR DEPARTEMENT #############################################
+################################################################################
+
+
+
 
 
 
