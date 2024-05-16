@@ -80,8 +80,8 @@ Faire_carte_departements <- function(data_loc, titre_graphe, sous_titre_graphe, 
     theme_void() +
     labs(
       title = titre_graphe,
-      subtitle = sous_titre_graphe
-    ) +
+      subtitle = sous_titre_graphe,
+      fill = filllabel) +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
           text = element_text(size = 18),  # Changer la taille de la police générale
@@ -89,8 +89,7 @@ Faire_carte_departements <- function(data_loc, titre_graphe, sous_titre_graphe, 
           axis.text = element_text(size = 18),  # Changer la taille de la police des étiquettes d'axe
           plot.title = element_text(size = 18, face = "bold", hjust = 0.5),  # Changer la taille de la police du titre du graphique
           legend.text = element_text(size = 18),
-          plot.subtitle = element_text(hjust = 0.5),
-          legend.position="bottom") 
+          plot.subtitle = element_text(hjust = 0.5)) 
   
   
   print(graph1)

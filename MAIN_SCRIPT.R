@@ -767,9 +767,11 @@ dep <- st_read(paste(repo_data, "dep_franceentiere_2022.gpkg", sep = "/"), quiet
 dt_merged <- merge(dep, dt_mean_dep, by.x = "code", by.y = "ccodep")
 
 
+# Puis le graphique
 data_loc <- copy(dt_merged)
 titre_graphe <- "Carte du taux moyen payé par département en 2021"
 sous_titre_graphe <- "Montant moyen payé en euro"
+filllabel <- "Montant payé (euro)"
 
 if(!mettre_titres_graphiques){
   titre_graphe <- ""
@@ -780,7 +782,7 @@ titre_save <- paste("Carte_tx_moyen_dtp", ".pdf", sep = "")
 titre_save <- paste(repo_sorties, titre_save, sep ='/')
 liste_chemins_graphes <- append(liste_chemins_graphes, titre_save)
 
-Faire_carte_departements(data_loc, titre_graphe, sous_titre_graphe, titre_save)
+Faire_carte_departements(data_loc, filllabel, titre_graphe, sous_titre_graphe, titre_save)
   
 
 
