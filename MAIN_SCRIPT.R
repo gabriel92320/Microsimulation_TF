@@ -34,7 +34,7 @@ repo_bases_intermediaires <- paste(repgen, "Bases_intermediaires" , sep = "/")
 annee <- 2021 # Pour 2020 il y a le tx départemental en plus
 toutes_annees <- TRUE # Pour calculer les montants sur les 3 années 2020, 2021 et 2022
 
-mettre_titres_graphiques <- TRUE # Pour sauvegarder les graphes SANS leur titre (pour pouvoir mettre le titre en caption latex)
+mettre_titres_graphiques <- FALSE # Pour sauvegarder les graphes SANS leur titre (pour pouvoir mettre le titre en caption latex)
 utiliser_dvldif2a <- TRUE # Pour utiliser la variable dvldif2a = Montant de VL exonérée (valeur de l’année) pour le calcul TF net ==> Ne change pas grand chose, mais je pense que c'est plus propre parce que déjà contenu dans la base
 
 nb_quantiles <- 20 # Pour tracer la TF en fnt des quantiles de RFR
@@ -641,6 +641,23 @@ Montant_TF_res_princ <- sum(dt_merged_REI_2021[Residence_principale == T]$Montan
 Montant_TF_res_sec <- sum(dt_merged_REI_2021[Residence_principale == F]$Montant_TF_NETTE_proratise_2021, na.rm = TRUE)
 
 100*Montant_TF_res_sec/Montant_TF_Tot # = 50.8% donc on peut doubler la TF sur les res secondaires et la supprimer sur les res principales, et ça sera neutre sur le plan budgétaire !
+table(dt_merged_REI_2021$Residence_principale)
+
+
+### CHIFFRAGE + PRECIS RES PRINCIPALES ET SECONDAIRES
+carac_men$ident <- as.factor(carac_men$ident)
+dt_merged_REI_2021$ident21 <- as.factor(dt_merged_REI_2021$ident21)
+TF_men <- dt_merged_REI_2021[Residence_principale == T, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+setnames(TF_men, "V1", "TF_nette")
+merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
+Montant_TF_res_princ <- sum(merged$poi*2*merged$TF_nette, na.rm = TRUE)
+
+TF_men <- dt_merged_REI_2021[Residence_principale == F, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+setnames(TF_men, "V1", "TF_nette")
+merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
+Montant_TF_res_sec <- sum(merged$poi*2*merged$TF_nette, na.rm = TRUE)
+
+100*Montant_TF_res_sec/(Montant_TF_res_sec + Montant_TF_res_princ)
 
 
 # moyenne de : TF/RFR, par quantile de RFR, observé
@@ -722,6 +739,10 @@ merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantil
 moy_tf_rfr_contrefact_3 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr_contrefact_3$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_2$Quintile_rfr)
 moy_tf_rfr_contrefact_3$scenario <- "Combinaison des deux"
+
+## Chiffrage montant tot :
+sum(merged$poi*2*merged$TF_nette, na.rm = TRUE)
+
 
 moy_tf_rfr <- rbindlist(list(moy_tf_rfr, moy_tf_rfr_contrefact_1, moy_tf_rfr_contrefact_2, moy_tf_rfr_contrefact_3))
 
