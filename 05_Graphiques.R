@@ -72,7 +72,7 @@ Faire_graphique_barplot_avec_fill <- function(data_loc, x, y, fill, xlabel, ylab
 
 
 
-Faire_carte_departements <- function(data_loc, titre_graphe, sous_titre_graphe, titre_save){
+Faire_carte_departements <- function(data_loc, filllabel, titre_graphe, sous_titre_graphe, titre_save){
   # Plot de la carte
   graph1 <- ggplot() +
     geom_sf(data = data_loc, aes(fill = Fill_carte)) +
