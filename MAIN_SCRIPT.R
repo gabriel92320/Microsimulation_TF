@@ -754,6 +754,42 @@ Faire_graphique_barplot_avec_fill(data_loc, x, y, fill, xlabel, ylabel, filllabe
 ############ CARTE PAR DEPARTEMENT #############################################
 ################################################################################
 
+# Moyenne de TF nette payée par département
+dt_mean_dep <- dt_merged_REI_2021[, mean(Montant_TF_NETTE_proratise_2021), by = "ccodep"]
+setnames(dt_mean_dep, "V1", "Fill_carte")
+# Forme attendue : dt_mean_dep = 1 colonne ccodep + 1 colonne Fill_carte
+
+
+# Importation fond de carte
+dep <- st_read(paste(repo_data, "dep_franceentiere_2022.gpkg", sep = "/"), quiet = TRUE)
+
+# Merge sur le code département
+dt_merged <- merge(dep, dt_mean_dep, by.x = "code", by.y = "ccodep")
+
+
+data_loc <- copy(dt_merged)
+titre_graphe <- "Carte du taux moyen payé par département en 2021"
+sous_titre_graphe <- "Montant moyen payé en euro"
+
+# Plot de la carte
+ggplot() +
+  geom_sf(data = dt_merged, aes(fill = Fill_carte)) +
+  scale_fill_viridis() +
+  theme_void() +
+  labs(
+    title = titre_graphe,
+    subtitle = sous_titre_graphe
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 0, vjust = 0.5, hjust=1),
+        text = element_text(size = 18),  # Changer la taille de la police générale
+        axis.title = element_text(size = 18),  # Changer la taille de la police des titres d'axe
+        axis.text = element_text(size = 18),  # Changer la taille de la police des étiquettes d'axe
+        plot.title = element_text(size = 18, face = "bold", hjust = 0.5),  # Changer la taille de la police du titre du graphique
+        legend.text = element_text(size = 18),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.position="bottom") 
+
 
 
 

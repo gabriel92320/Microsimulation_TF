@@ -23,3 +23,7 @@ library(readxl)
 library(xtable)
 
 library(modi) #POur les quantiles pondérés
+
+# Pour les cartes
+# library(sf)
+# library(mapsf)
