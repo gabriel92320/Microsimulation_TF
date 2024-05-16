@@ -39,6 +39,7 @@ utiliser_dvldif2a <- TRUE # Pour utiliser la variable dvldif2a = Montant de VL e
 
 nb_quantiles <- 20 # Pour tracer la TF en fnt des quantiles de RFR
 
+rfr_min <- 1500 # rfr minimum pour ne pas faire des ratio trop gros
 ################################################################################
 # =========== 01 = PACKAGES ET SCRIPTS DE FONCTIONS  ===========================
 ################################################################################
@@ -553,6 +554,9 @@ Faire_graphique_barplot_avec_fill(data_loc, x, y, fill, xlabel, ylabel, filllabe
 
 ####### PARTIE 4 : EN FRACTION DU RFR
 
+summary(carac_men$rfr)
+nrow(carac_men[rfr < 100])
+
 # Ce que chaque ménage a payé de TF en 2020, 2021 et 2022
 carac_men$ident <- as.factor(carac_men$ident)
 dt_merged_REI_suivi$ident21 <- as.factor(dt_merged_REI_suivi$ident21)
@@ -569,9 +573,13 @@ TF_men <- merge(TF_men, TF_men_2022, by = "ident21")
 
 merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
 
+
+
+
 merged[, Part_TF_rfr_2020 := 100*TF_nette_2020/rfr]
 merged[, Part_TF_rfr_2021 := 100*TF_nette_2021/rfr]
 merged[, Part_TF_rfr_2022 := 100*TF_nette_2022/rfr]
+
 
 
 
@@ -582,11 +590,11 @@ quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length
 merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
 
 
-moy_2020 <- merged[, weighted.mean(Part_TF_rfr_2020, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_2020 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr_2020, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_2020$annee <- 2020
-moy_2021 <- merged[, weighted.mean(Part_TF_rfr_2021, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_2021 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr_2021, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_2021$annee <- 2021
-moy_2022 <- merged[, weighted.mean(Part_TF_rfr_2022, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_2022 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr_2022, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_2022$annee <- 2022
 
 moy_tf_rfr <- rbindlist(list(moy_2020, moy_2021, moy_2022))
@@ -647,7 +655,7 @@ merged[, Part_TF_rfr := 100*TF_nette/rfr]
 quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
 merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
 
-moy_tf_rfr <- merged[, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_tf_rfr <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr$Quintile_rfr <- as.numeric(moy_tf_rfr$Quintile_rfr)
 
 moy_tf_rfr$scenario <- "Actuel"
@@ -668,7 +676,7 @@ merged[, Part_TF_rfr := 100*TF_nette/rfr]
 quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
 merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
 
-moy_tf_rfr_contrefact_1 <- merged[, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_tf_rfr_contrefact_1 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr_contrefact_1$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_1$Quintile_rfr)
 moy_tf_rfr_contrefact_1$scenario <- "TF doublée pour les RS"
 
@@ -688,7 +696,7 @@ merged[, Part_TF_rfr := 100*TF_nette/rfr]
 quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
 merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
 
-moy_tf_rfr_contrefact_2 <- merged[, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_tf_rfr_contrefact_2 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr_contrefact_2$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_2$Quintile_rfr)
 moy_tf_rfr_contrefact_2$scenario <- "TF supprimée pour les RP"
 
@@ -711,7 +719,7 @@ merged[, Part_TF_rfr := 100*TF_nette/rfr]
 quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
 merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
 
-moy_tf_rfr_contrefact_3 <- merged[, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
+moy_tf_rfr_contrefact_3 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr_contrefact_3$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_2$Quintile_rfr)
 moy_tf_rfr_contrefact_3$scenario <- "Combinaison des deux"
 
