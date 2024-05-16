@@ -12,6 +12,7 @@ Faire_dt_SOUS_REI <- function(liste_cols_REI_loc, annee_loc = 2021){
     REI_21 <- Renomer_colonnes_REI_2020(REI_21) # Il faut renomer les colonnes
     liste_cols_REI_loc <- append(liste_cols_REI_loc, "FB.-.DEP./.TAUX.NET") # Il faut ajouter le taux départemental !
     
+    SOUS_REI <- REI_21[, ..liste_cols_REI_loc]
     SOUS_REI$COMMUNE <- iconv(SOUS_REI$COMMUNE, from = "UTF-8", to = "ASCII", sub = "")
     SOUS_REI$DEPARTEMENT <- iconv(SOUS_REI$DEPARTEMENT, from = "UTF-8", to = "ASCII", sub = "")
     SOUS_REI$Libellé.commune <- iconv(SOUS_REI$Libellé.commune, from = "UTF-8", to = "ASCII", sub = "")
