@@ -34,8 +34,8 @@ repo_bases_intermediaires <- paste(repgen, "Bases_intermediaires" , sep = "/")
 annee <- 2021 # Pour 2020 il y a le tx départemental en plus
 toutes_annees <- TRUE # Pour calculer les montants sur les 3 années 2020, 2021 et 2022
 
-mettre_titres_graphiques <- FALSE # Pour sauvegarder les graphes SANS leur titre (pour pouvoir mettre le titre en caption latex)
-utiliser_dvldif2a <- TRUE # Pour utiliser la variable dvldif2a = Montant de VL exonérée (valeur de l’année) pour le calcul TF net ==> Ne change pas grand chose, mais je pense que c'est plus propre parce que déjà contenu dans la base
+mettre_titres_graphiques <- TRUE # Pour sauvegarder les graphes SANS leur titre (pour pouvoir mettre le titre en caption latex)
+utiliser_dvldif2a <- FALSE # Pour utiliser la variable dvldif2a = Montant de VL exonérée (valeur de l’année) pour le calcul TF net ==> Ne change pas grand chose, mais je pense que c'est plus propre parce que déjà contenu dans la base
 
 nb_quantiles <- 20 # Pour tracer la TF en fnt des quantiles de RFR
 
@@ -114,6 +114,38 @@ dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc, annee_loc, 
 # On stocke tous les chemins des pdf générés, pour pouvoir les fusionner à la fin et obtenir un joli cahier graphique
 liste_chemins_graphes <- c()
 
+
+############################# STAT DES SUR LA BASE DE DONNEES ##################
+
+table(dt_merged_REI$Raison_exoneration)
+nrow(dt_merged_REI[Montant_TF_NETTE != Montant_TF_BRUT])
+nrow(dt_merged_REI)
+
+
+dt_merged_REI[, .N, by = 'ccodep'][order(N)]
+nrow(carac_men)
+
+# Distribution nivviem
+N_tot <- sum(carac_men$poi)
+print(xtable(carac_men[, 100*sum(poi)/N_tot, by = "decile_ndv"]), include.rownames = FALSE)
+
+
+# Distribution RFR
+dw <- svydesign(ids = ~1, data =carac_men, weights = ~ carac_men$poi)
+tab <- svyquantile(~ rfr, dw, quantiles = c(0.1, 0.25, 0.5, 0.75, 0.9), na.rm = TRUE)
+tab <- as.data.table(tab$rfr)
+setnames(tab, "quantile", "rfr")
+moy <- as.data.table(svymean(~ rfr, na.rm = TRUE, dw))$mean
+
+tab$quantile <- c(0.1, 0.25, 0.5, 0.75, 0.9)
+dt_mean <- data.table(quantile = "Moyenne", rfr = moy)
+
+l <- c("quantile", "rfr")
+
+print(xtable(rbindlist(list(tab[,..l], dt_mean))), include.rownames = FALSE)
+
+
+sum(carac_men[rfr < rfr_min]$poi)/sum(carac_men$poi)
 
 ################################ GRAPHIQUES ####################################
 
