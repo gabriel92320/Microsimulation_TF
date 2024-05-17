@@ -147,15 +147,32 @@ print(xtable(rbindlist(list(tab[,..l], dt_mean))), include.rownames = FALSE)
 
 sum(carac_men[rfr < rfr_min]$poi)/sum(carac_men$poi)
 
+
 # Quelques chiffres sur la TFPB 2021
 dt_merged_REI$ident21 <- as.factor(dt_merged_REI$ident21)
 dt_merged_REI_2021$ident21 <- as.factor(dt_merged_REI_2021$ident21)
+dt_merged_REI_2020$ident21 <- as.factor(dt_merged_REI_2020$ident21)
+dt_merged_REI_2022$ident21 <- as.factor(dt_merged_REI_2022$ident21)
 carac_men$ident <- as.factor(carac_men$ident)
 
 
+TF_men <- dt_merged_REI_2021[, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
+merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
+sum(merged$poi*2*merged$V1, na.rm = TRUE) # Le total
+
+TF_men <- dt_merged_REI_2021[, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
+merged <- merge(TF_men, carac_men, all.y = TRUE, by.x = "ident21", by.y = "ident")
+merged[, weighted.mean(V1, w=poi, na.rm = TRUE)]
+
+sum(carac_men$poi*2)
+
+# Comparaison entre années
+TF_men <- dt_merged_REI_2022[, sum(Montant_TF_BRUT_proratise_2022,na.rm = T), by = "ident21"]
+merged <- merge(TF_men, carac_men, all.y = TRUE, by.x = "ident21", by.y = "ident")
+sum(merged$poi*2*merged$V1, na.rm = TRUE) # Le total
+merged[, weighted.mean(V1, w=poi, na.rm = TRUE)]
 
 
-table(dt_merged_REI$Montant_TF_NETTE_proratise == dt_merged_REI_2021$Montant_TF_NETTE_proratise_2021)
 
 ################################ GRAPHIQUES ####################################
 
@@ -719,7 +736,7 @@ moy_tf_rfr$Quintile_rfr <- as.numeric(moy_tf_rfr$Quintile_rfr)
 moy_tf_rfr$scenario <- "Actuel"
 
 
-# Contrefactuel 1 : on double uniquement les TF des résidences secondaires
+# Contrefactuel 1 : on double uniquement les TF des non résidences principales
 dt_merged_REI_contrefact <- copy(dt_merged_REI_2021)
 
 dt_merged_REI_contrefact[Residence_principale == F, Montant_TF_NETTE_proratise_2021 := Montant_TF_NETTE_proratise_2021*2]
