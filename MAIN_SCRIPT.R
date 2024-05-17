@@ -21,8 +21,8 @@
 # =========== 00 = REGLAGES ET PARAMETRES ======================================
 ################################################################################
 
-#repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
- repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
+repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
+ # repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
 
 
 repo_prgm <- paste(repgen, "MicrosimulationTF" , sep = "/")
@@ -755,6 +755,7 @@ sum(merged$poi*2*merged$TF_nette, na.rm = TRUE)
 
 moy_tf_rfr <- rbindlist(list(moy_tf_rfr, moy_tf_rfr_contrefact_1, moy_tf_rfr_contrefact_2, moy_tf_rfr_contrefact_3))
 
+moy_tf_rfr[Quintile_rfr == 2]
 
 #### Puis graphique :
 data_loc <- copy(moy_tf_rfr)
@@ -907,7 +908,7 @@ nrow(carac_men)
 
 # Distribution nivviem
 N_tot <- sum(carac_men$poi)
-print(xtable(carac_men[, 100*sum(poi)/N_tot, by = "decile_ndv"]), include.rownames = FALSE)
+print(xtable(carac_men[, 100*sum(poi)/N_tot, by = "decile_ndv"][order(decile_ndv)]), include.rownames = FALSE)
 
 
 # Distribution RFR
@@ -951,21 +952,5 @@ TF_men <- dt_merged_REI_2022[, sum(Montant_TF_BRUT_proratise_2022,na.rm = T), by
 merged <- merge(TF_men, carac_men, all.y = TRUE, by.x = "ident21", by.y = "ident")
 sum(merged$poi*2*merged$V1, na.rm = TRUE) # Le total
 merged[, weighted.mean(V1, w=poi, na.rm = TRUE)]
-
-
-
-################################################################################
-################### BROUILLON BENJAMIN ######################################### 
-################################################################################
-
-
-
-
-
-
-
-
-
-
 
 
