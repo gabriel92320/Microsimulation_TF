@@ -21,8 +21,8 @@
 # =========== 00 = REGLAGES ET PARAMETRES ======================================
 ################################################################################
 
-#repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
- repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
+repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
+ # repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
 
 
 repo_prgm <- paste(repgen, "MicrosimulationTF" , sep = "/")
@@ -146,6 +146,16 @@ print(xtable(rbindlist(list(tab[,..l], dt_mean))), include.rownames = FALSE)
 
 
 sum(carac_men[rfr < rfr_min]$poi)/sum(carac_men$poi)
+
+# Quelques chiffres sur la TFPB 2021
+dt_merged_REI$ident21 <- as.factor(dt_merged_REI$ident21)
+dt_merged_REI_2021$ident21 <- as.factor(dt_merged_REI_2021$ident21)
+carac_men$ident <- as.factor(carac_men$ident)
+
+
+
+
+table(dt_merged_REI$Montant_TF_NETTE_proratise == dt_merged_REI_2021$Montant_TF_NETTE_proratise_2021)
 
 ################################ GRAPHIQUES ####################################
 
@@ -358,6 +368,9 @@ liste_cols_annee <- c("FB_COMMUNE_TAUX_NET", "FN_GFP_TAUX_APPLICABLE_SUR_LE_TERR
 liste_cols_immobiles <- colnames(carac_tf)
 liste_cols_immobiles_2 <- c("LIBGEO","UU2020","LIBUU2020","TYPE_COMMUNE_UU","STATUT_COM_UU")
 liste_cols_immobiles <- append(liste_cols_immobiles, liste_cols_immobiles_2)
+
+# Pour s'éviter les problèmes ensuite : on remet dt_merged_REI = dt_merged_REI_2021
+dt_merged_REI <- copy(dt_merged_REI_2021)
 
 dt_merged_REI_suivi <- dt_merged_REI_2022[,..liste_cols_immobiles]
 
@@ -585,10 +598,6 @@ Faire_graphique_barplot_avec_fill(data_loc, x, y, fill, xlabel, ylabel, filllabe
 
 
 ####### PARTIE 4 : EN FRACTION DU RFR
-
-summary(carac_men$rfr)
-nrow(carac_men[rfr < 100])
-
 # Ce que chaque ménage a payé de TF en 2020, 2021 et 2022
 carac_men$ident <- as.factor(carac_men$ident)
 dt_merged_REI_suivi$ident21 <- as.factor(dt_merged_REI_suivi$ident21)
@@ -679,12 +688,12 @@ table(dt_merged_REI_2021$Residence_principale)
 ### CHIFFRAGE + PRECIS RES PRINCIPALES ET SECONDAIRES
 carac_men$ident <- as.factor(carac_men$ident)
 dt_merged_REI_2021$ident21 <- as.factor(dt_merged_REI_2021$ident21)
-TF_men <- dt_merged_REI_2021[Residence_principale == T, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+TF_men <- dt_merged_REI_2021[Residence_principale == T, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
 setnames(TF_men, "V1", "TF_nette")
 merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
 Montant_TF_res_princ <- sum(merged$poi*2*merged$TF_nette, na.rm = TRUE)
 
-TF_men <- dt_merged_REI_2021[Residence_principale == F, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+TF_men <- dt_merged_REI_2021[Residence_principale == F, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
 setnames(TF_men, "V1", "TF_nette")
 merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
 Montant_TF_res_sec <- sum(merged$poi*2*merged$TF_nette, na.rm = TRUE)
@@ -696,7 +705,7 @@ Montant_TF_res_sec <- sum(merged$poi*2*merged$TF_nette, na.rm = TRUE)
 # Scénarion actuel
 carac_men$ident <- as.factor(carac_men$ident)
 dt_merged_REI_2021$ident21 <- as.factor(dt_merged_REI_2021$ident21)
-TF_men <- dt_merged_REI_suivi[, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+TF_men <- dt_merged_REI_suivi[, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
 setnames(TF_men, "V1", "TF_nette")
 merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
 merged[, Part_TF_rfr := 100*TF_nette/rfr]
@@ -717,7 +726,7 @@ dt_merged_REI_contrefact[Residence_principale == F, Montant_TF_NETTE_proratise_2
 
 carac_men$ident <- as.factor(carac_men$ident)
 dt_merged_REI_contrefact$ident21 <- as.factor(dt_merged_REI_contrefact$ident21)
-TF_men <- dt_merged_REI_contrefact[, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+TF_men <- dt_merged_REI_contrefact[, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
 setnames(TF_men, "V1", "TF_nette")
 merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
 merged[, Part_TF_rfr := 100*TF_nette/rfr]
@@ -737,7 +746,7 @@ dt_merged_REI_contrefact[Residence_principale == T, Montant_TF_NETTE_proratise_2
 
 carac_men$ident <- as.factor(carac_men$ident)
 dt_merged_REI_contrefact$ident21 <- as.factor(dt_merged_REI_contrefact$ident21)
-TF_men <- dt_merged_REI_contrefact[, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+TF_men <- dt_merged_REI_contrefact[, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
 setnames(TF_men, "V1", "TF_nette")
 merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
 merged[, Part_TF_rfr := 100*TF_nette/rfr]
@@ -760,7 +769,7 @@ dt_merged_REI_contrefact[Residence_principale == F, Montant_TF_NETTE_proratise_2
 dt_merged_REI_contrefact[Residence_principale == T, Montant_TF_NETTE_proratise_2021 := 0]
 carac_men$ident <- as.factor(carac_men$ident)
 dt_merged_REI_contrefact$ident21 <- as.factor(dt_merged_REI_contrefact$ident21)
-TF_men <- dt_merged_REI_contrefact[, sum(Montant_TF_NETTE_proratise_2021), by = "ident21"]
+TF_men <- dt_merged_REI_contrefact[, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
 setnames(TF_men, "V1", "TF_nette")
 merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
 merged[, Part_TF_rfr := 100*TF_nette/rfr]
