@@ -21,8 +21,8 @@
 # =========== 00 = REGLAGES ET PARAMETRES ======================================
 ################################################################################
 
-repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
- # repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
+#repgen <- "C:/Users/Benjamin/Desktop/Ensae/3A-M2/Eco_redistribution"
+ repgen <- "/Users/gabrielsklenard/Documents/Memoire_Microsimulation"
 
 
 repo_prgm <- paste(repgen, "MicrosimulationTF" , sep = "/")
@@ -670,7 +670,10 @@ merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident
 merged[, Part_TF_rfr := 100*TF_nette/rfr]
 
 quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
-merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
+#### Pour monter le nb de quantiles, s'il y a des doublons :
+quantiles_unique <- unique(quantiles)
+merged[, Quintile_rfr := cut(rfr, breaks = quantiles_unique, labels = 1:(length(quantiles_unique) - 1), include.lowest = TRUE)]
+
 
 moy_tf_rfr <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr$Quintile_rfr <- as.numeric(moy_tf_rfr$Quintile_rfr)
@@ -691,7 +694,9 @@ merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident
 merged[, Part_TF_rfr := 100*TF_nette/rfr]
 
 quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
-merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
+#### Pour monter le nb de quantiles, s'il y a des doublons :
+quantiles_unique <- unique(quantiles)
+merged[, Quintile_rfr := cut(rfr, breaks = quantiles_unique, labels = 1:(length(quantiles_unique) - 1), include.lowest = TRUE)]
 
 moy_tf_rfr_contrefact_1 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr_contrefact_1$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_1$Quintile_rfr)
@@ -711,7 +716,9 @@ merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident
 merged[, Part_TF_rfr := 100*TF_nette/rfr]
 
 quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
-merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
+#### Pour monter le nb de quantiles, s'il y a des doublons :
+quantiles_unique <- unique(quantiles)
+merged[, Quintile_rfr := cut(rfr, breaks = quantiles_unique, labels = 1:(length(quantiles_unique) - 1), include.lowest = TRUE)]
 
 moy_tf_rfr_contrefact_2 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr_contrefact_2$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_2$Quintile_rfr)
@@ -734,7 +741,9 @@ merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident
 merged[, Part_TF_rfr := 100*TF_nette/rfr]
 
 quantiles <- weighted_quantiles(merged$rfr, merged$poi, probs = seq(0, 1, length.out = nb_quantiles + 1))
-merged[, Quintile_rfr := cut(rfr, breaks = quantiles, labels = 1:(length(quantiles) - 1), include.lowest = TRUE)]
+#### Pour monter le nb de quantiles, s'il y a des doublons :
+quantiles_unique <- unique(quantiles)
+merged[, Quintile_rfr := cut(rfr, breaks = quantiles_unique, labels = 1:(length(quantiles_unique) - 1), include.lowest = TRUE)]
 
 moy_tf_rfr_contrefact_3 <- merged[rfr > rfr_min, weighted.mean(Part_TF_rfr, w=poi, na.rm = TRUE), by = "Quintile_rfr"]
 moy_tf_rfr_contrefact_3$Quintile_rfr <- as.numeric(moy_tf_rfr_contrefact_2$Quintile_rfr)
@@ -752,7 +761,7 @@ data_loc <- copy(moy_tf_rfr)
 x <- "Quintile_rfr"
 y <- "V1"
 fill <- 'scenario'
-xlabel <- "Déciles revenu fiscal de référence"
+xlabel <- "Vingtiles de revenu fiscal de référence"
 ylabel <- "Part du RFR payé sous forme de TF"
 ysuffix <- "%"
 filllabel <- "Scénario :"
