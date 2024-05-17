@@ -115,64 +115,6 @@ dt_merged_REI <- Calculer_taux_net(dt_merged_REI_loc, carac_men_loc, annee_loc, 
 liste_chemins_graphes <- c()
 
 
-############################# STAT DES SUR LA BASE DE DONNEES ##################
-
-table(dt_merged_REI$Raison_exoneration)
-nrow(dt_merged_REI[Montant_TF_NETTE != Montant_TF_BRUT])
-nrow(dt_merged_REI)
-
-
-dt_merged_REI[, .N, by = 'ccodep'][order(N)]
-nrow(carac_men)
-
-# Distribution nivviem
-N_tot <- sum(carac_men$poi)
-print(xtable(carac_men[, 100*sum(poi)/N_tot, by = "decile_ndv"]), include.rownames = FALSE)
-
-
-# Distribution RFR
-dw <- svydesign(ids = ~1, data =carac_men, weights = ~ carac_men$poi)
-tab <- svyquantile(~ rfr, dw, quantiles = c(0.1, 0.25, 0.5, 0.75, 0.9), na.rm = TRUE)
-tab <- as.data.table(tab$rfr)
-setnames(tab, "quantile", "rfr")
-moy <- as.data.table(svymean(~ rfr, na.rm = TRUE, dw))$mean
-
-tab$quantile <- c(0.1, 0.25, 0.5, 0.75, 0.9)
-dt_mean <- data.table(quantile = "Moyenne", rfr = moy)
-
-l <- c("quantile", "rfr")
-
-print(xtable(rbindlist(list(tab[,..l], dt_mean))), include.rownames = FALSE)
-
-
-sum(carac_men[rfr < rfr_min]$poi)/sum(carac_men$poi)
-
-
-# Quelques chiffres sur la TFPB 2021
-dt_merged_REI$ident21 <- as.factor(dt_merged_REI$ident21)
-dt_merged_REI_2021$ident21 <- as.factor(dt_merged_REI_2021$ident21)
-dt_merged_REI_2020$ident21 <- as.factor(dt_merged_REI_2020$ident21)
-dt_merged_REI_2022$ident21 <- as.factor(dt_merged_REI_2022$ident21)
-carac_men$ident <- as.factor(carac_men$ident)
-
-
-TF_men <- dt_merged_REI_2021[, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
-merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
-sum(merged$poi*2*merged$V1, na.rm = TRUE) # Le total
-
-TF_men <- dt_merged_REI_2021[, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
-merged <- merge(TF_men, carac_men, all.y = TRUE, by.x = "ident21", by.y = "ident")
-merged[, weighted.mean(V1, w=poi, na.rm = TRUE)]
-
-sum(carac_men$poi*2)
-
-# Comparaison entre années
-TF_men <- dt_merged_REI_2022[, sum(Montant_TF_BRUT_proratise_2022,na.rm = T), by = "ident21"]
-merged <- merge(TF_men, carac_men, all.y = TRUE, by.x = "ident21", by.y = "ident")
-sum(merged$poi*2*merged$V1, na.rm = TRUE) # Le total
-merged[, weighted.mean(V1, w=poi, na.rm = TRUE)]
-
-
 
 ################################ GRAPHIQUES ####################################
 
@@ -938,6 +880,70 @@ Faire_carte_departements(data_loc, filllabel, titre_graphe, sous_titre_graphe, t
 titre_save <- paste("cahier_graphique_",annee,".pdf", sep = "")
 titre_save <- paste(repgen, titre_save, sep ='/')
 pdf_combine(liste_chemins_graphes, output = titre_save)
+
+
+
+################################################################################
+############################# STAT DES SUR LA BASE DE DONNEES ##################
+################################################################################
+
+
+table(dt_merged_REI$Raison_exoneration)
+nrow(dt_merged_REI[Montant_TF_NETTE != Montant_TF_BRUT])
+nrow(dt_merged_REI)
+
+
+dt_merged_REI[, .N, by = 'ccodep'][order(N)]
+nrow(carac_men)
+
+# Distribution nivviem
+N_tot <- sum(carac_men$poi)
+print(xtable(carac_men[, 100*sum(poi)/N_tot, by = "decile_ndv"]), include.rownames = FALSE)
+
+
+# Distribution RFR
+dw <- svydesign(ids = ~1, data =carac_men, weights = ~ carac_men$poi)
+tab <- svyquantile(~ rfr, dw, quantiles = c(0.1, 0.25, 0.5, 0.75, 0.9), na.rm = TRUE)
+tab <- as.data.table(tab$rfr)
+setnames(tab, "quantile", "rfr")
+moy <- as.data.table(svymean(~ rfr, na.rm = TRUE, dw))$mean
+
+tab$quantile <- c(0.1, 0.25, 0.5, 0.75, 0.9)
+dt_mean <- data.table(quantile = "Moyenne", rfr = moy)
+
+l <- c("quantile", "rfr")
+
+print(xtable(rbindlist(list(tab[,..l], dt_mean))), include.rownames = FALSE)
+
+
+sum(carac_men[rfr < rfr_min]$poi)/sum(carac_men$poi)
+
+
+# Quelques chiffres sur la TFPB 2021
+dt_merged_REI$ident21 <- as.factor(dt_merged_REI$ident21)
+dt_merged_REI_2021$ident21 <- as.factor(dt_merged_REI_2021$ident21)
+dt_merged_REI_2020$ident21 <- as.factor(dt_merged_REI_2020$ident21)
+dt_merged_REI_2022$ident21 <- as.factor(dt_merged_REI_2022$ident21)
+carac_men$ident <- as.factor(carac_men$ident)
+
+
+TF_men <- dt_merged_REI_2021[, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
+merged <- merge(TF_men, carac_men, all.x = TRUE, by.x = "ident21", by.y = "ident")
+sum(merged$poi*2*merged$V1, na.rm = TRUE) # Le total
+
+TF_men <- dt_merged_REI_2021[, sum(Montant_TF_NETTE_proratise_2021,na.rm = T), by = "ident21"]
+merged <- merge(TF_men, carac_men, all.y = TRUE, by.x = "ident21", by.y = "ident")
+merged[, weighted.mean(V1, w=poi, na.rm = TRUE)]
+
+sum(carac_men$poi*2)
+
+# Comparaison entre années
+TF_men <- dt_merged_REI_2022[, sum(Montant_TF_BRUT_proratise_2022,na.rm = T), by = "ident21"]
+merged <- merge(TF_men, carac_men, all.y = TRUE, by.x = "ident21", by.y = "ident")
+sum(merged$poi*2*merged$V1, na.rm = TRUE) # Le total
+merged[, weighted.mean(V1, w=poi, na.rm = TRUE)]
+
+
 
 ################################################################################
 ################### BROUILLON BENJAMIN ######################################### 
